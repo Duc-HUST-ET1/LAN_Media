@@ -1,0 +1,53 @@
+body { min-width: 320px; min-height: 100vh; }
+button { border: 0; cursor: pointer; }
+.app-shell { min-height: 100vh; }
+.sidebar { position: fixed; inset: 0 auto 0 0; display: flex; flex-direction: column; width: 246px; padding: 30px 18px 22px; background: #141a27; border-right: 1px solid var(--border); }
+.brand { margin: 0 10px 48px; color: #f4f6fa; font-size: 21px; font-weight: 750; letter-spacing: -.8px; text-decoration: none; }
+.brand span { color: var(--accent); }
+.sidebar-label, .eyebrow { color: #748096; font-size: 10px; font-weight: 700; letter-spacing: 1.6px; }
+.sidebar-label { margin: 0 10px 13px; }
+.sidebar nav { display: grid; gap: 5px; }
+.nav-link { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border-radius: 8px; color: #aab3c3; background: transparent; text-align: left; transition: background .15s, color .15s; }
+.nav-link:hover { color: #fff; background: #1c2434; }
+.nav-link--active { color: var(--accent); background: #242d3b; }
+.nav-dot { width: 6px; height: 6px; border: 1px solid currentColor; border-radius: 50%; }
+.nav-link--active .nav-dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 10px #a8f07866; }
+.sidebar-footer { margin-top: auto; padding: 15px 10px 0; border-top: 1px solid var(--border); color: #7c879a; font-size: 12px; line-height: 1.7; }
+.main-content { min-height: 100vh; margin-left: 246px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; height: 66px; padding: 0 42px; border-bottom: 1px solid var(--border); color: #96a0b1; font-size: 12px; }
+.frontend-status, .status-pill { display: inline-flex; align-items: center; gap: 8px; }
+.frontend-status i, .status-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 9px #a8f07866; }
+.page-content { max-width: 1040px; margin: 0 auto; padding: 62px 42px; }
+.eyebrow { margin: 0 0 14px; color: #9dad8b; }
+h1 { margin: 0; font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.8px; }
+.intro { margin: 12px 0 36px; color: var(--muted); font-size: 14px; }
+.status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.status-card { min-height: 176px; padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.card-heading { display: flex; align-items: center; justify-content: space-between; color: #a7b0c0; font-size: 12px; }
+.status-pill, .phase-pill { padding: 6px 9px; border: 1px solid #334131; border-radius: 20px; color: #b9e7a0; background: #252f29; font-size: 10px; }
+.status-pill i { width: 6px; height: 6px; }
+.status-pill.is-offline { border-color: #51343a; color: #f49aa3; background: #34262d; }
+.status-pill.is-offline i { background: #f07882; box-shadow: none; }
+.status-pill.is-pending { border-color: #45404a; color: #d2bf83; background: #302d31; }
+.status-pill.is-pending i { background: #d2bf83; box-shadow: none; }
+.status-card h2 { margin: 28px 0 9px; font-size: 18px; font-weight: 600; }
+.status-card p { margin: 0; color: var(--muted); font-size: 12px; }
+.status-card p strong { color: var(--accent); font-weight: 600; }
+.status-card--muted h2 { margin-top: 28px; }
+.phase-pill { border-color: #3b394e; color: #c6b9ff; background: #2b293b; }
+.notice { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 10px; background: #141a27; }
+.notice-mark { color: var(--accent); font-size: 20px; }
+.notice p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.notice strong { color: #e5e9f1; font-size: 13px; font-weight: 600; }
+@media (max-width: 720px) {
+  .sidebar { position: static; width: 100%; padding: 18px 16px 12px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .brand { margin: 0 0 18px; }
+  .sidebar-label, .sidebar-footer { display: none; }
+  .sidebar nav { display: flex; gap: 5px; overflow-x: auto; }
+  .nav-link { width: auto; flex: 0 0 auto; padding: 9px 11px; font-size: 12px; }
+  .nav-dot { display: none; }
+  .main-content { margin-left: 0; }
+  .topbar { height: 54px; padding: 0 20px; }
+  .page-content { padding: 42px 20px; }
+  .status-grid { grid-template-columns: 1fr; }
+}

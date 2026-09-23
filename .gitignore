@@ -1,0 +1,17 @@
+node_modules/
+dist/
+backend/dist/
+frontend/dist/
+coverage/
+.env
+.env.*
+.env.example
+*.log
+storage/files/*
+storage/images/*
+storage/videos/*
+storage/temporary/*
+!storage/files/.gitkeep
+!storage/images/.gitkeep
+!storage/videos/.gitkeep
+!storage/temporary/.gitkeep

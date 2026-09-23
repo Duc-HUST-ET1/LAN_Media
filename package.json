@@ -1,0 +1,34 @@
+{
+  "name": "lan-media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm run build:backend && concurrently -k -n compile,server \"tsc -p backend/tsconfig.json --watch\" \"node --watch backend/dist/main.js\"",
+    "dev:frontend": "vite --config frontend/vite.config.ts --host 0.0.0.0",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "tsc -p backend/tsconfig.json",
+    "build:frontend": "tsc -p frontend/tsconfig.json && vite build --config frontend/vite.config.ts",
+    "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
+    "typecheck:backend": "tsc -p backend/tsconfig.json --noEmit",
+    "typecheck:frontend": "tsc -p frontend/tsconfig.json --noEmit",
+    "test": "npm run build:backend && node --test tests/integration/health.test.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.30",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
+  }
+}
