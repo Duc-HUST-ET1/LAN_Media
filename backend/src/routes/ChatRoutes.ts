@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { addMembers, createDirect, createGroup, listConversations, listMessages, removeMember } from '../controllers/ChatController.js';
+import { requireAuth } from '../core/security/AuthMiddleware.js';
+export const chatRoutes = Router();
+chatRoutes.get('/conversations', requireAuth, listConversations);
+chatRoutes.post('/conversations/direct', requireAuth, createDirect);
+chatRoutes.post('/conversations/group', requireAuth, createGroup);
+chatRoutes.get('/conversations/:conversationId/messages', requireAuth, listMessages);
+chatRoutes.post('/conversations/:conversationId/members', requireAuth, addMembers);
+chatRoutes.delete('/conversations/:conversationId/members/:userId', requireAuth, removeMember);

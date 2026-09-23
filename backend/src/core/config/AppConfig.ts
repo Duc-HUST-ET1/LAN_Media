@@ -8,4 +8,14 @@ export const appConfig = {
   host: process.env.HOST ?? '0.0.0.0',
   port,
   environment: process.env.NODE_ENV ?? 'development',
+  frontendOrigins: (process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173').split(',').map((origin) => origin.trim()).filter(Boolean),
+  sessionTtlHours: Number(process.env.SESSION_TTL_HOURS ?? 168),
+  maxMessageLength: Number(process.env.MAX_MESSAGE_LENGTH ?? 4000),
 };
+
+if (!Number.isFinite(appConfig.sessionTtlHours) || appConfig.sessionTtlHours < 1) {
+  throw new Error('SESSION_TTL_HOURS must be a positive number.');
+}
+if (!Number.isInteger(appConfig.maxMessageLength) || appConfig.maxMessageLength < 1 || appConfig.maxMessageLength > 16000) {
+  throw new Error('MAX_MESSAGE_LENGTH must be an integer between 1 and 16000.');
+}

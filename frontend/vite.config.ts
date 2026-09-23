@@ -18,6 +18,12 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: `http://127.0.0.1:${env.PORT ?? 3000}`,
           changeOrigin: true,
+          configure: (proxy) => proxy.on('proxyReq', (proxyRequest) => proxyRequest.removeHeader('origin')),
+        },
+        '/ws': {
+          target: `ws://127.0.0.1:${env.PORT ?? 3000}`,
+          ws: true,
+          configure: (proxy) => proxy.on('proxyReqWs', (proxyRequest) => proxyRequest.removeHeader('origin')),
         },
       },
     },

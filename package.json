@@ -13,19 +13,22 @@
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
     "typecheck:backend": "tsc -p backend/tsconfig.json --noEmit",
     "typecheck:frontend": "tsc -p frontend/tsconfig.json --noEmit",
-    "test": "npm run build:backend && node --test tests/integration/health.test.mjs"
+    "test": "npm run build:backend && node --test tests/unit/auth-service.test.mjs tests/unit/password-hasher.test.mjs tests/unit/user-repository.test.mjs tests/integration/health.test.mjs tests/integration/auth.test.mjs tests/integration/chat.test.mjs"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "mysql2": "^3.24.4",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.7",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^9.2.0",
     "typescript": "~5.8.3",

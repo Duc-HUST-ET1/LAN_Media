@@ -1,0 +1,21 @@
+import type { RequestHandler } from 'express';
+import { ApiError } from '../core/errors/ApiError.js';
+import { ChatService } from '../services/ChatService.js';
+import { ConversationRepository } from '../repositories/ConversationRepository.js';
+import { MessageRepository } from '../repositories/MessageRepository.js';
+import { UserRepository } from '../repositories/UserRepository.js';
+import { database } from '../core/database/Database.js';
+import { connectionManager } from '../websocket/ConnectionManager.js';
+import { appConfig } from '../core/config/AppConfig.js';
+
+export const chatService = new ChatService(new ConversationRepository(database), new MessageRepository(database), new UserRepository(database), appConfig.maxMessageLength);
+const userId = (id?: string) => { if (!id) throw new ApiError(401, 'Authentication required.'); return id; };
+const routeId = (value: string | string[] | undefined) => { if (typeof value !== 'string') throw new ApiError(400, 'Invalid route identifier.'); return value; };
+export const listConversations: RequestHandler = async (_req, res, next) => { try { res.json({ conversations: await chatService.listConversations(userId(res.locals.authenticatedUser?.id)) }); } catch (e) { next(e); } };
+export const listContacts: RequestHandler = async (_req, res, next) => { try { res.json({ users: await chatService.contacts(userId(res.locals.authenticatedUser?.id)) }); } catch (e) { next(e); } };
+export const listOnline: RequestHandler = async (_req, res, next) => { try { res.json({ users: await chatService.onlineUsers(connectionManager.onlineUserIds()) }); } catch (e) { next(e); } };
+export const createDirect: RequestHandler = async (req, res, next) => { try { res.status(201).json({ conversation: await chatService.direct(userId(res.locals.authenticatedUser?.id), String(req.body?.userId ?? '')) }); } catch (e) { next(e); } };
+export const createGroup: RequestHandler = async (req, res, next) => { try { const { name, memberIds } = req.body ?? {}; if (typeof name !== 'string' || !Array.isArray(memberIds) || !memberIds.every((id: unknown) => typeof id === 'string')) throw new ApiError(400, 'name and memberIds are required.'); res.status(201).json({ conversation: await chatService.group(userId(res.locals.authenticatedUser?.id), name, memberIds) }); } catch (e) { next(e); } };
+export const listMessages: RequestHandler = async (req, res, next) => { try { const limit = Number(req.query.limit ?? 50); if (!Number.isInteger(limit) || limit < 1) throw new ApiError(400, 'limit must be a positive integer.'); const before = req.query.before; if (before !== undefined && (typeof before !== 'string' || Number.isNaN(Date.parse(before)))) throw new ApiError(400, 'before must be a valid timestamp.'); res.json({ messages: await chatService.history(userId(res.locals.authenticatedUser?.id), routeId(req.params.conversationId), limit, before as string | undefined) }); } catch (e) { next(e); } };
+export const addMembers: RequestHandler = async (req, res, next) => { try { const memberIds = req.body?.memberIds; if (!Array.isArray(memberIds) || !memberIds.every((id: unknown) => typeof id === 'string')) throw new ApiError(400, 'memberIds must be an array of user IDs.'); res.json({ conversation: await chatService.addMembers(userId(res.locals.authenticatedUser?.id), routeId(req.params.conversationId), memberIds) }); } catch (e) { next(e); } };
+export const removeMember: RequestHandler = async (req, res, next) => { try { await chatService.removeMember(userId(res.locals.authenticatedUser?.id), routeId(req.params.conversationId), routeId(req.params.userId)); res.status(204).end(); } catch (e) { next(e); } };

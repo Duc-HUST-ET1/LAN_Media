@@ -1,10 +1,18 @@
+import { database } from '../core/database/Database.js';
+
 export interface HealthStatus {
-  status: 'ok';
+  status: 'ok' | 'degraded';
   service: 'LAN-Media Backend';
+  database: 'connected' | 'disconnected';
 }
 
 export class HealthService {
-  getStatus(): HealthStatus {
-    return { status: 'ok', service: 'LAN-Media Backend' };
+  async getStatus(): Promise<HealthStatus> {
+    try {
+      await database.ping();
+      return { status: 'ok', service: 'LAN-Media Backend', database: 'connected' };
+    } catch {
+      return { status: 'degraded', service: 'LAN-Media Backend', database: 'disconnected' };
+    }
   }
 }

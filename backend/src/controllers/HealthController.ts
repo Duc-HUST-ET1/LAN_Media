@@ -3,6 +3,7 @@ import { HealthService } from '../services/HealthService.js';
 
 const healthService = new HealthService();
 
-export function getHealth(_request: Request, response: Response): void {
-  response.status(200).json(healthService.getStatus());
+export async function getHealth(_request: Request, response: Response): Promise<void> {
+  const status = await healthService.getStatus();
+  response.status(status.status === 'ok' ? 200 : 503).json(status);
 }
