@@ -10,6 +10,7 @@ import { authRoutes } from './routes/AuthRoutes.js';
 import { healthRoutes } from './routes/HealthRoutes.js';
 import { chatRoutes } from './routes/ChatRoutes.js';
 import { userRoutes } from './routes/UserRoutes.js';
+import { fileRoutes } from './routes/FileRoutes.js';
 import { attachWebSocketServer } from './websocket/WebSocketServer.js';
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(express.json({ limit: '32kb' }));
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', chatRoutes);
+app.use('/api', fileRoutes);
 app.use('/api/users', userRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);

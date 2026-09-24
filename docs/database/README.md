@@ -1,6 +1,6 @@
 # MySQL setup
 
-The backend uses MySQL 8.0+ and applies the versioned schema migration in `backend/src/core/database/migrations/` when it starts. Migrations create `users`, `sessions`, `devices`, `conversations`, `conversation_members`, `messages`, `files`, and `calls`.
+The backend uses MySQL 8.0+ and applies the versioned schema migration in `backend/src/core/database/migrations/` when it starts. Migrations create `users`, `sessions`, `devices`, `conversations`, `conversation_members`, `messages`, `files`, and `calls`. Migration 003 adds active conversation and message references to file metadata and allows `FILE` message rows; it is additive and preserves existing rows.
 
 ## Option A: existing host MySQL
 

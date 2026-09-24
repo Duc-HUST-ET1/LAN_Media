@@ -13,9 +13,10 @@
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
     "typecheck:backend": "tsc -p backend/tsconfig.json --noEmit",
     "typecheck:frontend": "tsc -p frontend/tsconfig.json --noEmit",
-    "test": "npm run build:backend && node --test tests/unit/auth-service.test.mjs tests/unit/password-hasher.test.mjs tests/unit/user-repository.test.mjs tests/integration/health.test.mjs tests/integration/auth.test.mjs tests/integration/chat.test.mjs"
+    "test": "npm run build:backend && node --test tests/unit/auth-service.test.mjs tests/unit/password-hasher.test.mjs tests/unit/user-repository.test.mjs tests/integration/health.test.mjs tests/integration/auth.test.mjs tests/integration/chat.test.mjs tests/integration/files.test.mjs"
   },
   "dependencies": {
+    "busboy": "^1.6.0",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "mysql2": "^3.24.4",
@@ -24,6 +25,7 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@types/busboy": "^1.5.4",
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",

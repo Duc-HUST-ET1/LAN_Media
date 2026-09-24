@@ -11,6 +11,8 @@ storage/files/*
 storage/images/*
 storage/videos/*
 storage/temporary/*
+uploads/*
+!uploads/.gitkeep
 !storage/files/.gitkeep
 !storage/images/.gitkeep
 !storage/videos/.gitkeep

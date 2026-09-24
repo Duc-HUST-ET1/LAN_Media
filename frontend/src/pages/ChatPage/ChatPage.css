@@ -100,6 +100,42 @@
 .chat-info-member > button { width: 28px; height: 28px; border-radius: 50%; color: #be4b58; background: #fff1f2; }
 .chat-info-add { width: calc(100% - 28px); min-height: 38px; margin: 14px; border: 1px solid #dce7fb; border-radius: 9px; color: #2863bd; background: #f2f6ff; font-size: 10px; font-weight: 700; }
 .chat-info-empty { padding: 22px 16px; color: #8591a5; font-size: 11px; line-height: 1.6; text-align: center; }
+.chat-file-card { display: flex; align-items: center; gap: 10px; min-width: 250px; max-width: min(60vw, 430px); margin-top: 7px; padding: 10px; border: 1px solid #e1e8f2; border-radius: 10px; background: #fff; }
+.chat-message.is-own .chat-file-card { border-color: #ffffff80; }
+.chat-file-icon { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; border-radius: 8px; color: #2e6fdb; background: #edf4ff; font-size: 19px; }
+.chat-file-details { display: grid; flex: 1; min-width: 0; gap: 4px; }
+.chat-file-details strong { overflow: hidden; color: #29364b; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.chat-file-details small { color: #748198; font-size: 9px; overflow-wrap: anywhere; }
+.chat-file-details progress, .chat-upload-status progress { width: 100%; height: 5px; accent-color: #2673f5; }
+.chat-file-download, .chat-attach-button { min-height: 34px; padding: 0 10px; border: 1px solid #dbe5f3; border-radius: 8px; color: #2864bf; background: #f7faff; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.chat-file-download:disabled, .chat-attach-button:disabled { opacity: .55; }
+.chat-file-error { color: #b5404b !important; }
+.chat-upload-status { display: grid; flex: 0 0 auto; gap: 5px; padding: 8px 16px; border-top: 1px solid #edf0f5; background: #fff; }
+.chat-upload-status strong { overflow: hidden; color: #39475e; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.chat-upload-status small { color: #728098; font-size: 9px; }
+.chat-upload-status.is-failed small { color: #b5404b; }
+.chat-file-picker { display: none; }
+.chat-compose { flex-wrap: wrap; }
+.chat-compose-main { display: flex; flex: 1 1 100%; align-items: center; gap: 9px; min-width: 0; }
+.chat-pending-attachment { display: flex; flex: 1 1 100%; align-items: center; gap: 9px; min-width: 0; padding: 8px 11px; border: 1px solid #dce7f7; border-radius: 10px; background: #f6f9ff; }
+.chat-pending-attachment > span:first-child { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 8px; color: #2868cc; background: #e8f0ff; }
+.chat-pending-attachment > span:nth-child(2) { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.chat-pending-attachment strong { overflow: hidden; color: #354258; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.chat-pending-attachment small { color: #8190a7; font-size: 9px; }
+.chat-pending-attachment button, .chat-upload-status > button { width: 26px; height: 26px; border-radius: 50%; color: #71809a; background: #eaf0f8; }
+.chat-upload-status { grid-template-columns: minmax(0, 1fr) auto; }
+.chat-upload-status > strong, .chat-upload-status > small, .chat-upload-status > progress { grid-column: 1; }
+.chat-upload-status > button { grid-column: 2; grid-row: 1 / span 2; }
+.chat-info-tabs { display: flex; gap: 4px; padding: 10px; border-bottom: 1px solid #edf0f5; }
+.chat-info-tabs button { flex: 1; min-height: 34px; border-radius: 8px; color: #7a879b; background: transparent; font-size: 10px; font-weight: 700; }
+.chat-info-tabs button.is-active { color: #2865c2; background: #edf4ff; }
+.chat-info-tabs button span { color: #98a4b5; }
+.chat-shared-files { display: grid; gap: 12px; padding: 12px; }
+.chat-shared-file { display: grid; gap: 4px; }
+.chat-shared-file > small { padding-left: 4px; color: #8a95a8; font-size: 9px; }
+.chat-info .chat-file-card { min-width: 0; max-width: 100%; flex-wrap: wrap; gap: 7px; padding: 8px; }
+.chat-info .chat-file-details { flex-basis: calc(100% - 45px); }
+.chat-info .chat-file-download { width: 100%; }
 .chat-head-person { display: flex !important; align-items: center; gap: 10px !important; }
 .chat-head-person > span:last-child { display: grid; gap: 4px; }
 .chat-head-avatar { width: 38px; height: 38px; flex-basis: 38px; margin: 0; font-size: 13px; }

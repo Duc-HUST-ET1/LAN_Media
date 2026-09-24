@@ -1,7 +1,9 @@
 import type { AuthUser } from './AuthApi';
 export interface ChatMember { userId: string; username: string; displayName: string; role: 'MEMBER' | 'ADMIN'; }
 export interface Conversation { id: string; type: 'DIRECT' | 'GROUP'; name: string | null; createdBy: string; updatedAt: string; members: ChatMember[]; }
-export interface ChatMessage { id: string; conversationId: string; senderId: string; senderName: string; type: 'TEXT'; content: string; createdAt: string; }
+export interface ChatFile { id: string; name: string; size: number; mimeType: string; downloadUrl: string; }
+export interface ConversationFile extends ChatFile { senderName: string; createdAt: string; }
+export interface ChatMessage { id: string; conversationId: string; senderId: string; senderName: string; type: 'TEXT' | 'FILE'; content: string; file?: ChatFile; createdAt: string; }
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...init?.headers } });
   const body = response.status === 204 ? undefined : await response.json() as { error?: { message?: string } } & T;
@@ -15,6 +17,7 @@ export const ChatApi = {
   async direct(userId: string) { return (await request<{ conversation: Conversation }>('/conversations/direct', { method: 'POST', body: JSON.stringify({ userId }) })).conversation; },
   async group(name: string, memberIds: string[]) { return (await request<{ conversation: Conversation }>('/conversations/group', { method: 'POST', body: JSON.stringify({ name, memberIds }) })).conversation; },
   async messages(conversationId: string) { return (await request<{ messages: ChatMessage[] }>(`/conversations/${encodeURIComponent(conversationId)}/messages?limit=50`)).messages; },
+  async files(conversationId: string) { return (await request<{ files: ConversationFile[] }>(`/conversations/${encodeURIComponent(conversationId)}/files`)).files; },
   async addMembers(id: string, memberIds: string[]) { return (await request<{ conversation: Conversation }>(`/conversations/${encodeURIComponent(id)}/members`, { method: 'POST', body: JSON.stringify({ memberIds }) })).conversation; },
   removeMember(id: string, userId: string) { return request<void>(`/conversations/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }); },
 };
