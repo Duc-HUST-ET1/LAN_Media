@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatApi, type ChatMessage, type Conversation } from '../../api/ChatApi';
 import { realtimeClient, type RealtimeEvent } from '../../api/RealtimeClient';
 import './ChatPage.css';
@@ -14,6 +14,8 @@ export default function ChatPage({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const active = useMemo(() => conversations.find(item => item.id === activeId) ?? null, [conversations, activeId]);
+  const activePeer = active?.members.find(member => member.userId !== userId);
+  const activeTitle = active?.type === 'GROUP' ? active.name ?? 'Group conversation' : activePeer?.displayName ?? 'Direct conversation';
   const refresh = useCallback(async () => {
     try {
       const [cs, people, onlinePeople] = await Promise.all([ChatApi.conversations(), ChatApi.contacts(), ChatApi.online()]);
@@ -54,10 +56,12 @@ export default function ChatPage({ userId }: { userId: string }) {
     if (!selected.length) { setError('Select at least one other member to create a group.'); return; }
     setBusy(true); try { const conversation = await ChatApi.group(name, selected); await refresh(); setActiveId(conversation.id); } catch (e) { setError(e instanceof Error ? e.message : 'Could not create group.'); } finally { setBusy(false); }
   }
-  function send(event: FormEvent) {
-    event.preventDefault(); if (!draft.trim() || !active) return;
-    if (!realtimeClient.send({ type: 'chat.send', requestId: crypto.randomUUID(), payload: { conversationId: active.id, content: draft } })) { setError('Realtime connection is offline. Reconnecting…'); return; }
-    setDraft(''); realtimeClient.send({ type: 'chat.typing.stop', payload: { conversationId: active.id } });
+  function sendMessage() {
+    const content = draft.trim();
+    if (!content) { setError('Write a message before sending.'); return; }
+    if (!active) { setError('Select a conversation first.'); return; }
+    if (!realtimeClient.send({ type: 'chat.send', requestId: crypto.randomUUID(), payload: { conversationId: active.id, content } })) { setError('Realtime connection is offline. Reconnecting…'); return; }
+    setError(''); setDraft(''); realtimeClient.send({ type: 'chat.typing.stop', payload: { conversationId: active.id } });
   }
   async function addPeople() {
     if (!active) return;
@@ -87,9 +91,15 @@ export default function ChatPage({ userId }: { userId: string }) {
     </aside>
     <section className="chat-panel" aria-label="Conversation">{active ? <>
       <header className="chat-panel-head"><div><strong>{active.type === 'GROUP' ? active.name : active.members.find(member => member.userId !== userId)?.displayName ?? 'Direct conversation'}</strong><small>{active.type === 'GROUP' ? `${active.members.length} members` : 'LAN conversation'}</small></div>{active.type === 'GROUP' && active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="chat-quiet-button" onClick={() => void addPeople()}>Add people</button>}</header>
-      <div className="chat-messages" ref={scrollRef}>{!messages.length && <div className="chat-empty"><span>✳</span><strong>No messages yet</strong><p>Send a message to start the conversation.</p></div>}{messages.map(message => <article key={message.id} className="chat-message"><div className="chat-message-meta"><strong>{message.senderName}</strong><time>{new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(message.createdAt))}</time></div><p>{message.content}</p></article>)}{typing && <p className="chat-typing">A member is typing…</p>}</div>
-      {active.type === 'GROUP' && <div className="chat-members">{active.members.map(member => <span key={member.userId}>{member.displayName}{member.role === 'ADMIN' ? ' · admin' : ''}{member.role === 'MEMBER' && active.members.some(item => item.role === 'ADMIN' && item.userId === userId) && <button aria-label={`Remove ${member.displayName}`} onClick={() => void removePerson(member.userId, member.displayName)}>×</button>}</span>)}</div>}
-      <form className="chat-compose" onSubmit={send}><input value={draft} onChange={event => { setDraft(event.target.value); if (active) realtimeClient.send({ type: event.target.value ? 'chat.typing.start' : 'chat.typing.stop', payload: { conversationId: active.id } }); }} maxLength={4000} placeholder="Write a message…" aria-label="Message"/><button type="submit" disabled={!draft.trim()}>Send</button></form>
+      <div className="chat-messages" ref={scrollRef}>{!messages.length && <div className="chat-empty"><span>✳</span><strong>No messages yet</strong><p>Send a message to start the conversation.</p></div>}{messages.map(message => <article key={message.id} className={`chat-message${message.senderId === userId ? ' is-own' : ''}`}><div className="chat-message-meta"><strong>{message.senderName}</strong><time>{new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(message.createdAt))}</time></div><p>{message.content}</p></article>)}{typing && <p className="chat-typing">A member is typing…</p>}</div>
+      <form className="chat-compose" onSubmit={event => { event.preventDefault(); console.info('[chat] submit', { draftLength: draft.trim().length, buttonDisabled: !draft.trim() }); sendMessage(); }}><input value={draft} onInput={event => { const value = event.currentTarget.value; console.info('[chat] input updated', { draftLength: value.trim().length, sendEnabled: Boolean(value.trim()) }); setDraft(value); setError(''); if (active) realtimeClient.send({ type: value ? 'chat.typing.start' : 'chat.typing.stop', payload: { conversationId: active.id } }); }} maxLength={4000} placeholder="Write a message…" aria-label="Message"/><button type="submit" disabled={!draft.trim()}>Send</button></form>
     </> : <div className="chat-empty chat-no-selection"><span>✳</span><strong>Your conversations</strong><p>Select a person or start a group to begin.</p></div>}</section></div>
+    <aside className="chat-info" aria-label="Conversation details">
+      {active ? <>
+        <div className="chat-info-profile"><span className="chat-avatar chat-info-avatar">{activeTitle.slice(0, 1).toUpperCase()}</span><strong>{activeTitle}</strong><small>{active.type === 'GROUP' ? 'Group conversation' : `@${activePeer?.username ?? ''}`}</small>{active.type === 'DIRECT' && <span className={`chat-info-presence${activePeer && online.has(activePeer.userId) ? ' is-online' : ''}`}>{activePeer && online.has(activePeer.userId) ? 'Active now' : 'Offline'}</span>}</div>
+        {active.type === 'GROUP' ? <div className="chat-info-section"><div className="chat-info-section-head"><strong>Members</strong><span>{active.members.length}</span></div>{active.members.map(member => <div className="chat-info-member" key={member.userId}><span className="chat-avatar chat-info-member-avatar">{member.displayName.slice(0, 1).toUpperCase()}</span><span><strong>{member.displayName}</strong><small>{member.role === 'ADMIN' ? 'Admin' : 'Member'}</small></span>{member.role === 'MEMBER' && active.members.some(item => item.role === 'ADMIN' && item.userId === userId) && <button aria-label={`Remove ${member.displayName}`} onClick={() => void removePerson(member.userId, member.displayName)}>×</button>}</div>)}</div> : <div className="chat-info-section"><div className="chat-info-section-head"><strong>Contact</strong></div><p>{activePeer?.displayName ?? 'Conversation member'}</p><small>@{activePeer?.username ?? ''}</small></div>}
+        {active.type === 'GROUP' && active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="chat-info-add" onClick={() => void addPeople()}>＋ Add members</button>}
+      </> : <div className="chat-info-empty">Choose a conversation to view its details.</div>}
+    </aside>
   </div>;
 }
