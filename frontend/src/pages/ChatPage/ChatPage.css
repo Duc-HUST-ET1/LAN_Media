@@ -139,6 +139,20 @@
 .chat-head-person { display: flex !important; align-items: center; gap: 10px !important; }
 .chat-head-person > span:last-child { display: grid; gap: 4px; }
 .chat-head-avatar { width: 38px; height: 38px; flex-basis: 38px; margin: 0; font-size: 13px; }
+.chat-call-actions { display: flex; gap: 7px; }
+.chat-call-actions .chat-quiet-button:disabled { cursor: not-allowed; opacity: .45; }
+.call-overlay { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: #111a2bcc; }
+.call-card { width: min(520px, 100%); padding: 26px; border: 1px solid #e2e9f4; border-radius: 18px; background: #fff; box-shadow: 0 24px 80px #101d3540; text-align: center; }
+.call-card h2 { margin: 0 0 12px; color: #26354d; font-size: 20px; text-transform: capitalize; }
+.call-card > strong { color: #40516c; font-size: 14px; }
+.call-card > p { margin: 8px 0 18px; color: #76849a; font-size: 12px; }
+.call-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.call-controls button { min-height: 40px; padding: 0 16px; border-radius: 20px; color: #fff; background: #276fe4; font-size: 11px; font-weight: 700; }
+.call-controls button:last-child { background: #d74450; }
+.call-videos { position: relative; overflow: hidden; min-height: 220px; border-radius: 12px; background: #172237; }
+.call-videos video:first-child { width: 100%; height: 280px; object-fit: cover; }
+.call-videos video:last-child { position: absolute; right: 12px; bottom: 12px; width: 28%; max-height: 100px; border: 2px solid #fff; border-radius: 9px; object-fit: cover; background: #27344b; }
+.call-toast { position: fixed; z-index: 21; right: 20px; bottom: 20px; max-width: 360px; padding: 12px 16px; border: 1px solid #f0d3d7; border-radius: 10px; color: #a83845; background: #fff5f6; box-shadow: 0 8px 24px #20304b1c; font-size: 12px; }
 
 @media (max-width: 1080px) {
   .chat-page { grid-template-columns: 260px minmax(0, 1fr); }

@@ -9,6 +9,8 @@ import SettingsPage from './pages/SettingsPage/SettingsPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useCall } from './hooks/useCall';
+import CallDialog from './components/call/CallDialog';
 import './styles/reset.css';
 import './styles/variables.css';
 import './styles/global.css';
@@ -34,7 +36,8 @@ export default function App() {
   const [backend, setBackend] = useState<BackendHealth | null>(null);
   const [connectionError, setConnectionError] = useState(false);
   const auth = useAuth();
-  const realtime = useWebSocket(Boolean(auth.user));
+  const realtime = useWebSocket(auth.user?.id ?? null);
+  const call = useCall();
 
   function navigate(path: Route, replace = false) {
     if (replace) window.history.replaceState({}, '', path);
@@ -87,7 +90,7 @@ export default function App() {
   } else if (auth.user && route === '/') {
     pageContent = <HomePage user={auth.user} onLogout={handleLogout} onNavigate={navigate} />;
   } else if (auth.user && route === '/chat') {
-    pageContent = <ChatPage userId={auth.user.id} />;
+    pageContent = <ChatPage userId={auth.user.id} call={call} />;
   } else if (auth.user && route === '/calls') {
     pageContent = <CallPage />;
   } else if (auth.user && route === '/files') {
@@ -126,6 +129,7 @@ export default function App() {
           {auth.user && route !== '/' && <button className="secondary-button page-logout" onClick={() => void handleLogout()} type="button">Log out</button>}
         </section>
       </main>
+      <CallDialog call={call} contacts={[]} />
     </div>
   );
 }

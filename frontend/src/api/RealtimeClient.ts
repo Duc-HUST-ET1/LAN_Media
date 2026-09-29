@@ -36,7 +36,8 @@ class RealtimeClient {
     };
     socket.onclose = (event) => {
       console.warn('[realtime] closed:', { code: event.code, reason: event.reason || '(no reason)' });
-      if (this.socket === socket) this.socket = null;
+      if (this.socket !== socket) return;
+      this.socket = null;
       if (!this.active) return;
       if (event.code === 4401) { this.setStatus('disconnected'); return; }
       this.setStatus('disconnected');
