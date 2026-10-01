@@ -1,11 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { getHealth, type BackendHealth } from './api/HealthApi';
 import { useAuth } from './hooks/useAuth';
-import HomePage from './pages/HomePage/HomePage';
 import ChatPage from './pages/ChatPage/ChatPage';
-import CallPage from './pages/CallPage/CallPage';
-import FilesPage from './pages/FilesPage/FilesPage';
-import SettingsPage from './pages/SettingsPage/SettingsPage';
+import DemoWorkspace from './pages/DemoWorkspace';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -14,6 +11,7 @@ import CallDialog from './components/call/CallDialog';
 import './styles/reset.css';
 import './styles/variables.css';
 import './styles/global.css';
+import './styles/demo.css';
 
 const routes = {
   '/': 'Home', '/chat': 'Chat', '/calls': 'Calls', '/files': 'Files', '/settings': 'Settings',
@@ -80,6 +78,11 @@ export default function App() {
     navigate('/login');
   };
 
+  if (auth.user && route !== '/login' && route !== '/register') {
+    const initialTab = route === '/files' ? 'files' : route === '/calls' ? 'calls' : route === '/settings' ? 'settings' : 'message';
+    return <><DemoWorkspace user={auth.user} call={call} initialTab={initialTab} onOpenChat={() => navigate('/chat')} onLogout={() => void handleLogout()} /><CallDialog call={call} contacts={[]} /></>;
+  }
+
   let pageContent: ReactNode;
   if (auth.loading) {
     pageContent = <p className="intro">Checking your session…</p>;
@@ -87,21 +90,27 @@ export default function App() {
     pageContent = <LoginPage onLogin={handleLogin} onNavigate={(path) => navigate(path)} />;
   } else if (!auth.user && route === '/register') {
     pageContent = <RegisterPage onRegister={handleRegister} onNavigate={(path) => navigate(path)} />;
-  } else if (auth.user && route === '/') {
-    pageContent = <HomePage user={auth.user} onLogout={handleLogout} onNavigate={navigate} />;
-  } else if (auth.user && route === '/chat') {
+  } else if (auth.user && (route === '/' || route === '/chat')) {
     pageContent = <ChatPage userId={auth.user.id} call={call} />;
-  } else if (auth.user && route === '/calls') {
-    pageContent = <CallPage />;
-  } else if (auth.user && route === '/files') {
-    pageContent = <FilesPage />;
   } else if (auth.user) {
-    pageContent = <SettingsPage />;
+    pageContent = <p className="intro">Loading workspace…</p>;
   }
 
   return (
-    <div className={`app-shell${auth.user ? '' : ' app-shell--guest'}${route === '/chat' ? ' app-shell--chat' : ''}`}>
-      <header className="app-topbar">
+    <div className={`app-shell${auth.user ? '' : ' app-shell--guest'}${auth.user && (route === '/' || route === '/chat') ? ' app-shell--chat' : ''}`}>
+      {auth.user && (route === '/' || route === '/chat') && <aside className="workspace-rail">
+        <a className="workspace-brand" href="/" aria-label="LAN Media" onClick={(event) => { event.preventDefault(); navigate('/'); }}>L</a>
+        <nav aria-label="Workspace navigation">
+          {protectedPages.filter(item => item.path !== '/').map(item => <a key={item.path} className={`workspace-rail-link${(route === item.path || (route === '/' && item.path === '/chat')) ? ' is-active' : ''}`} href={item.path} title={item.title} aria-label={item.title} onClick={event => { event.preventDefault(); navigate(item.path); }}>
+            <span aria-hidden="true">{item.icon}</span><small>{item.title}</small>
+          </a>)}
+        </nav>
+        <div className="workspace-rail-bottom">
+          <button className="workspace-rail-link" title="Log out" aria-label="Log out" onClick={() => void handleLogout()}><span aria-hidden="true">↪</span><small>Exit</small></button>
+          <span className="workspace-user" title={auth.user.username}>{auth.user.displayName.slice(0, 1).toUpperCase()}</span>
+        </div>
+      </aside>}
+      <header className={`app-topbar${(route === '/' || route === '/chat') && auth.user ? ' app-topbar--chat' : ''}`}>
         <a className="brand" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>LAN<span>-</span>Media</a>
         {auth.user && <nav className="top-nav" aria-label="Main navigation">
           {protectedPages.map((item) => (
@@ -119,12 +128,12 @@ export default function App() {
           {auth.user && <span className="profile-chip" title={auth.user.username}>{auth.user.displayName.slice(0, 1).toUpperCase()}</span>}
         </div>
       </header>
-      {auth.user && <nav className="mobile-nav" aria-label="Mobile navigation">
+      {auth.user && route !== '/' && route !== '/chat' && <nav className="mobile-nav" aria-label="Mobile navigation">
         {protectedPages.map((item) => <a className={`nav-link${route === item.path ? ' nav-link--active' : ''}`} href={item.path} key={item.path} onClick={(event) => { event.preventDefault(); navigate(item.path); }}><span className="nav-icon" aria-hidden="true">{item.icon}</span><span>{item.title}</span></a>)}
       </nav>}
       <main className="main-content">
         <section className="page-content">
-          {page !== 'Login' && page !== 'Register' && page !== 'Home' && route !== '/chat' && <p className="eyebrow">YOUR LOCAL NETWORK</p>}
+          {page !== 'Login' && page !== 'Register' && page !== 'Home' && route !== '/' && route !== '/chat' && <p className="eyebrow">YOUR LOCAL NETWORK</p>}
           {pageContent}
           {auth.user && route !== '/' && <button className="secondary-button page-logout" onClick={() => void handleLogout()} type="button">Log out</button>}
         </section>

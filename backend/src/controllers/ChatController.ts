@@ -17,5 +17,16 @@ export const listOnline: RequestHandler = async (_req, res, next) => { try { res
 export const createDirect: RequestHandler = async (req, res, next) => { try { res.status(201).json({ conversation: await chatService.direct(userId(res.locals.authenticatedUser?.id), String(req.body?.userId ?? '')) }); } catch (e) { next(e); } };
 export const createGroup: RequestHandler = async (req, res, next) => { try { const { name, memberIds } = req.body ?? {}; if (typeof name !== 'string' || !Array.isArray(memberIds) || !memberIds.every((id: unknown) => typeof id === 'string')) throw new ApiError(400, 'name and memberIds are required.'); res.status(201).json({ conversation: await chatService.group(userId(res.locals.authenticatedUser?.id), name, memberIds) }); } catch (e) { next(e); } };
 export const listMessages: RequestHandler = async (req, res, next) => { try { const limit = Number(req.query.limit ?? 50); if (!Number.isInteger(limit) || limit < 1) throw new ApiError(400, 'limit must be a positive integer.'); const before = req.query.before; if (before !== undefined && (typeof before !== 'string' || Number.isNaN(Date.parse(before)))) throw new ApiError(400, 'before must be a valid timestamp.'); res.json({ messages: await chatService.history(userId(res.locals.authenticatedUser?.id), routeId(req.params.conversationId), limit, before as string | undefined) }); } catch (e) { next(e); } };
+export const sendMessage: RequestHandler = async (req, res, next) => {
+  try {
+    const senderId = userId(res.locals.authenticatedUser?.id);
+    const conversationId = routeId(req.params.conversationId);
+    if (typeof req.body?.content !== 'string') throw new ApiError(400, 'Message content is required.');
+    const message = await chatService.send(senderId, conversationId, req.body.content);
+    const conversation = (await chatService.listConversations(senderId)).find(item => item.id === conversationId);
+    connectionManager.sendToUsers(conversation?.members.map(member => member.userId) ?? [senderId], { type: 'chat.message', payload: { message } });
+    res.status(201).json({ message });
+  } catch (e) { next(e); }
+};
 export const addMembers: RequestHandler = async (req, res, next) => { try { const memberIds = req.body?.memberIds; if (!Array.isArray(memberIds) || !memberIds.every((id: unknown) => typeof id === 'string')) throw new ApiError(400, 'memberIds must be an array of user IDs.'); res.json({ conversation: await chatService.addMembers(userId(res.locals.authenticatedUser?.id), routeId(req.params.conversationId), memberIds) }); } catch (e) { next(e); } };
 export const removeMember: RequestHandler = async (req, res, next) => { try { await chatService.removeMember(userId(res.locals.authenticatedUser?.id), routeId(req.params.conversationId), routeId(req.params.userId)); res.status(204).end(); } catch (e) { next(e); } };

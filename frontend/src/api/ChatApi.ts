@@ -17,6 +17,7 @@ export const ChatApi = {
   async direct(userId: string) { return (await request<{ conversation: Conversation }>('/conversations/direct', { method: 'POST', body: JSON.stringify({ userId }) })).conversation; },
   async group(name: string, memberIds: string[]) { return (await request<{ conversation: Conversation }>('/conversations/group', { method: 'POST', body: JSON.stringify({ name, memberIds }) })).conversation; },
   async messages(conversationId: string) { return (await request<{ messages: ChatMessage[] }>(`/conversations/${encodeURIComponent(conversationId)}/messages?limit=50`)).messages; },
+  async sendMessage(conversationId: string, content: string) { return (await request<{ message: ChatMessage }>(`/conversations/${encodeURIComponent(conversationId)}/messages`, { method: 'POST', body: JSON.stringify({ content }) })).message; },
   async files(conversationId: string) { return (await request<{ files: ConversationFile[] }>(`/conversations/${encodeURIComponent(conversationId)}/files`)).files; },
   async addMembers(id: string, memberIds: string[]) { return (await request<{ conversation: Conversation }>(`/conversations/${encodeURIComponent(id)}/members`, { method: 'POST', body: JSON.stringify({ memberIds }) })).conversation; },
   removeMember(id: string, userId: string) { return request<void>(`/conversations/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }); },

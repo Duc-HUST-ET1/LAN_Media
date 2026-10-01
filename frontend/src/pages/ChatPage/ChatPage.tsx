@@ -5,11 +5,18 @@ import { FileMessage, formatFileSize, type DownloadState } from '../../component
 import { realtimeClient, type RealtimeEvent } from '../../api/RealtimeClient';
 import './ChatPage.css';
 import type { CallController } from '../../hooks/useCall';
+const avatarPalette = ['blue', 'violet', 'amber', 'rose', 'teal'] as const;
+function paletteColor(value: string) {
+  let hash = 0;
+  for (const character of value) hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  return avatarPalette[Math.abs(hash) % avatarPalette.length];
+}
 export default function ChatPage({ userId, call }: { userId: string; call: CallController }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [contacts, setContacts] = useState<Awaited<ReturnType<typeof ChatApi.contacts>>>([]);
   const [online, setOnline] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sharedFiles, setSharedFiles] = useState<Awaited<ReturnType<typeof ChatApi.files>>>([]);
   const [rightTab, setRightTab] = useState<'details' | 'files'>('details');
@@ -26,6 +33,11 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
   activeIdRef.current = activeId;
   const scrollRef = useRef<HTMLDivElement>(null);
   const active = useMemo(() => conversations.find(item => item.id === activeId) ?? null, [conversations, activeId]);
+  const visibleConversations = useMemo(() => conversations.filter(item => {
+    const peer = item.members.find(member => member.userId !== userId);
+    const label = item.type === 'GROUP' ? item.name ?? 'Nhóm' : peer?.displayName ?? 'Trò chuyện';
+    return label.toLocaleLowerCase().includes(query.toLocaleLowerCase());
+  }), [conversations, query, userId]);
   const activePeer = active?.members.find(member => member.userId !== userId);
   const activeTitle = active?.type === 'GROUP' ? active.name ?? 'Group conversation' : activePeer?.displayName ?? 'Direct conversation';
   const refresh = useCallback(async () => {
@@ -108,12 +120,13 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
         }
       }
       if (content) {
-        if (!realtimeClient.send({ type: 'chat.send', requestId: crypto.randomUUID(), payload: { conversationId, content } })) {
-          if (activeId === conversationId) setError('Realtime connection is offline. Reconnecting…');
-          return;
-        }
-        setDraft(''); realtimeClient.send({ type: 'chat.typing.stop', payload: { conversationId } });
+        const message = await ChatApi.sendMessage(conversationId, content);
+        if (activeIdRef.current === conversationId) setMessages(old => old.some(item => item.id === message.id) ? old : [...old, message]);
+        setDraft('');
+        realtimeClient.send({ type: 'chat.typing.stop', payload: { conversationId } });
       }
+    } catch (cause) {
+      if (activeIdRef.current === conversationId) setError(cause instanceof Error ? cause.message : 'Could not send message.');
     } finally { setSending(false); }
   }
   async function downloadFile(fileId: string, suggestedName?: string) {
@@ -140,30 +153,65 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
     try { await ChatApi.removeMember(active.id, id); await refresh(); } catch (e) { setError(e instanceof Error ? e.message : 'Could not remove member.'); }
   }
   return <div className="chat-page">
-    <div className="chat-heading"><div><p className="eyebrow">REALTIME MESSAGING</p><h1>Chat</h1><p className="intro">Private conversations on your local network.</p></div><button className="chat-new-group" disabled={busy || !contacts.length} onClick={() => void createGroup()}>＋ New group</button></div>
-    {error && <div className="chat-error" role="alert">{error}</div>}
-    <div className="chat-layout"><aside className="chat-list"><div className="chat-section-title">CONVERSATIONS</div>
-      {conversations.map(conversation => {
-        const peer = conversation.members.find(member => member.userId !== userId);
-        const label = conversation.type === 'GROUP' ? conversation.name ?? 'Group' : peer?.displayName ?? 'Direct chat';
-        return <button key={conversation.id} onClick={() => setActiveId(conversation.id)} className={`chat-list-item${activeId === conversation.id ? ' is-active' : ''}`}><span className="chat-avatar">{label.slice(0, 1).toUpperCase()}</span><span className="chat-list-copy"><strong>{label}</strong><small>{conversation.type === 'GROUP' ? `${conversation.members.length} members` : peer?.username}</small></span>{conversation.type === 'DIRECT' && <i className={`presence-dot${peer && online.has(peer.userId) ? ' is-online' : ''}`} />}</button>;
-      })}
-      <div className="chat-section-title chat-contacts-title">PEOPLE</div>
-      {contacts.map(person => <button key={person.id} className="chat-list-item contact-item" onClick={() => void openDirect(person.id)} disabled={busy}><span className="chat-avatar chat-avatar--small">{person.displayName.slice(0, 1).toUpperCase()}</span><span className="chat-list-copy"><strong>{person.displayName}</strong><small>@{person.username}</small></span><i className={`presence-dot${online.has(person.id) ? ' is-online' : ''}`} /></button>)}
-      {!contacts.length && <p className="chat-empty-hint">No other registered users yet.</p>}
-    </aside>
-    <section className="chat-panel" aria-label="Conversation">{active ? <>
-      <header className="chat-panel-head"><div><strong>{active.type === 'GROUP' ? active.name : active.members.find(member => member.userId !== userId)?.displayName ?? 'Direct conversation'}</strong><small>{active.type === 'GROUP' ? `${active.members.length} members` : 'LAN conversation'}</small></div><div className="chat-call-actions">{active.type === 'DIRECT' && <><button className="chat-quiet-button" disabled={!activePeer || !online.has(activePeer.userId) || !!call.call} onClick={() => activePeer && void call.start(activePeer.userId, activeTitle, 'voice')}>Voice Call</button><button className="chat-quiet-button" disabled={!activePeer || !online.has(activePeer.userId) || !!call.call} onClick={() => activePeer && void call.start(activePeer.userId, activeTitle, 'video')}>Video Call</button></>}{active.type === 'GROUP' && active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="chat-quiet-button" onClick={() => void addPeople()}>Add people</button>}</div></header>
-      <div className="chat-messages" ref={scrollRef}>{!messages.length && <div className="chat-empty"><span>✳</span><strong>No messages yet</strong><p>Send a message to start the conversation.</p></div>}{messages.map(message => <article key={message.id} className={`chat-message${message.senderId === userId ? ' is-own' : ''}`}><div className="chat-message-meta"><strong>{message.senderName}</strong><time>{new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(message.createdAt))}</time></div>{message.type === 'FILE' && message.file ? <FileMessage file={message.file} state={downloads[message.file.id]} onDownload={() => void downloadFile(message.file!.id)} /> : message.type === 'FILE' ? <p>File attachment is unavailable.</p> : <p>{message.content}</p>}</article>)}{typing && <p className="chat-typing">A member is typing…</p>}</div>
-      {uploadState?.conversationId === active.id && <div className={`chat-upload-status is-${uploadState.status}`} role="status"><strong>{uploadState.name}</strong><small>{uploadState.status === 'complete' ? 'File sent' : uploadState.status === 'failed' ? uploadState.error : `${uploadState.percent ?? 0}% · ${formatFileSize(uploadState.loaded)} / ${formatFileSize(uploadState.total ?? 0)}`}</small>{uploadState.status === 'uploading' && <progress max={100} value={uploadState.percent ?? 0} />}{uploadState.status !== 'uploading' && <button type="button" aria-label="Dismiss upload status" onClick={() => setUploadState(null)}>×</button>}</div>}
-      <form className="chat-compose" onSubmit={event => { event.preventDefault(); void sendMessage(); }}>{selectedFile && <div className="chat-pending-attachment"><span aria-hidden="true">↧</span><span><strong>{selectedFile.name}</strong><small>{formatFileSize(selectedFile.size)} · Ready to send</small></span><button type="button" aria-label="Remove attachment" onClick={() => setSelectedFile(null)} disabled={sending}>×</button></div>}<div className="chat-compose-main"><input value={draft} onInput={event => { const value = event.currentTarget.value; setDraft(value); setError(''); if (active) realtimeClient.send({ type: value ? 'chat.typing.start' : 'chat.typing.stop', payload: { conversationId: active.id } }); }} maxLength={4000} placeholder="Write a message…" aria-label="Message"/><input ref={fileInput} className="chat-file-picker" type="file" onChange={event => { const file = event.currentTarget.files?.[0]; setSelectedFile(file ?? null); event.currentTarget.value = ''; }} aria-label="Choose a file"/><button type="button" className="chat-attach-button" disabled={sending} onClick={() => fileInput.current?.click()}>Attach</button><button type="submit" disabled={sending || (!draft.trim() && !selectedFile)}>{sending ? 'Sending…' : 'Send'}</button></div></form>
-    </> : <div className="chat-empty chat-no-selection"><span>✳</span><strong>Your conversations</strong><p>Select a person or start a group to begin.</p></div>}</section></div>
-    <aside className="chat-info" aria-label="Conversation details">
-      {active ? <>
-        <nav className="chat-info-tabs" aria-label="Conversation panel"><button type="button" className={rightTab === 'details' ? 'is-active' : ''} onClick={() => setRightTab('details')}>Details</button><button type="button" className={rightTab === 'files' ? 'is-active' : ''} onClick={() => setRightTab('files')}>Files <span>{sharedFiles.length}</span></button></nav>{rightTab === 'files' ? <section className="chat-shared-files">{sharedFiles.length ? sharedFiles.map(file => <div className="chat-shared-file" key={file.id}><FileMessage file={file} state={downloads[file.id]} onDownload={() => void downloadFile(file.id, file.name)} /><small>Shared by {file.senderName} · {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(file.createdAt))}</small></div>) : <p className="chat-info-empty">No files shared in this conversation yet.</p>}</section> : <><div className="chat-info-profile"><span className="chat-avatar chat-info-avatar">{activeTitle.slice(0, 1).toUpperCase()}</span><strong>{activeTitle}</strong><small>{active.type === 'GROUP' ? 'Group conversation' : `@${activePeer?.username ?? ''}`}</small>{active.type === 'DIRECT' && <span className={`chat-info-presence${activePeer && online.has(activePeer.userId) ? ' is-online' : ''}`}>{activePeer && online.has(activePeer.userId) ? 'Active now' : 'Offline'}</span>}</div>
-        {active.type === 'GROUP' ? <div className="chat-info-section"><div className="chat-info-section-head"><strong>Members</strong><span>{active.members.length}</span></div>{active.members.map(member => <div className="chat-info-member" key={member.userId}><span className="chat-avatar chat-info-member-avatar">{member.displayName.slice(0, 1).toUpperCase()}</span><span><strong>{member.displayName}</strong><small>{member.role === 'ADMIN' ? 'Admin' : 'Member'}</small></span>{member.role === 'MEMBER' && active.members.some(item => item.role === 'ADMIN' && item.userId === userId) && <button aria-label={`Remove ${member.displayName}`} onClick={() => void removePerson(member.userId, member.displayName)}>×</button>}</div>)}</div> : <div className="chat-info-section"><div className="chat-info-section-head"><strong>Contact</strong></div><p>{activePeer?.displayName ?? 'Conversation member'}</p><small>@{activePeer?.username ?? ''}</small></div>}
-        {active.type === 'GROUP' && active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="chat-info-add" onClick={() => void addPeople()}>＋ Add members</button>}
-      </>}</> : <div className="chat-info-empty">Choose a conversation to view its details.</div>}
-    </aside>
+    <div className="chat-layout">
+      <aside className="conversation-panel chat-list">
+        <header className="panel-heading">
+          <div><p className="eyebrow">LAN WORKSPACE</p><h1>Tin nhắn</h1></div>
+          <button className="square-button primary" title="Tạo nhóm mới" onClick={() => void createGroup()} disabled={busy || !contacts.length}>＋</button>
+        </header>
+        <label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm người hoặc nhóm"/><span className="shortcut">⌘ K</span></label>
+        <div className="filter-row"><span className="filter active">Tất cả <span>{conversations.length}</span></span><span className="filter">Nhóm</span></div>
+        {error && <div className="chat-error" role="alert">{error}</div>}
+        <div className="conversation-list">
+          {visibleConversations.map(conversation => {
+            const peer = conversation.members.find(member => member.userId !== userId);
+            const label = conversation.type === 'GROUP' ? conversation.name ?? 'Nhóm' : peer?.displayName ?? 'Trò chuyện';
+            const lastUpdated = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(conversation.updatedAt));
+            return <button key={conversation.id} onClick={() => setActiveId(conversation.id)} className={`conversation${activeId === conversation.id ? ' active' : ''}`}>
+              <span className={`avatar avatar-${paletteColor(conversation.id)}`}>{label.slice(0, 2).toUpperCase()}{conversation.type === 'DIRECT' && peer && online.has(peer.userId) && <span className="presence-dot"/>}</span>
+              <span className="conversation-copy"><span className="conversation-top"><strong>{label}</strong><time>{lastUpdated}</time></span><span className="conversation-preview">{conversation.type === 'GROUP' ? `${conversation.members.length} thành viên` : `@${peer?.username ?? ''}`}</span></span>
+            </button>;
+          })}
+          {!visibleConversations.length && <p className="empty-state">Không tìm thấy cuộc trò chuyện.</p>}
+          <div className="chat-section-title chat-contacts-title">DANH BẠ</div>
+          {contacts.filter(person => person.displayName.toLocaleLowerCase().includes(query.toLocaleLowerCase()) || person.username.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(person => <button key={person.id} className="conversation" onClick={() => void openDirect(person.id)} disabled={busy}>
+            <span className={`avatar avatar-${paletteColor(person.id)}`}>{person.displayName.slice(0, 1).toUpperCase()}{online.has(person.id) && <span className="presence-dot"/>}</span>
+            <span className="conversation-copy"><span className="conversation-top"><strong>{person.displayName}</strong></span><span className="conversation-preview">@{person.username}</span></span>
+          </button>)}
+          {!contacts.length && <p className="empty-state">Chưa có thành viên khác.</p>}
+        </div>
+        <div className="network-card"><span className="network-pulse"><span/></span><div><strong>LAN đã kết nối</strong><small>{online.size} thành viên đang trực tuyến</small></div></div>
+      </aside>
+
+      <section className="chat-panel" aria-label="Conversation">{active ? <>
+        <header className="chat-header"><div className="profile"><span className={`avatar avatar-${paletteColor(active.id)}`}>{activeTitle.slice(0, 1).toUpperCase()}<span className={activePeer && online.has(activePeer.userId) ? 'presence-dot' : 'presence-dot offline'}/></span><div><strong>{activeTitle}</strong><span>{active.type === 'GROUP' ? `${active.members.length} thành viên` : activePeer && online.has(activePeer.userId) ? 'Đang hoạt động trong LAN' : 'Ngoại tuyến'}</span></div></div>
+          <div className="header-actions">{active.type === 'DIRECT' && <><button className="icon-button" title="Gọi thoại" disabled={!activePeer || !online.has(activePeer.userId) || !!call.call} onClick={() => activePeer && void call.start(activePeer.userId, activeTitle, 'voice')}>☎</button><button className="icon-button" title="Gọi video" disabled={!activePeer || !online.has(activePeer.userId) || !!call.call} onClick={() => activePeer && void call.start(activePeer.userId, activeTitle, 'video')}>▣</button></>}{active.type === 'GROUP' && active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="icon-button" title="Thêm thành viên" onClick={() => void addPeople()}>＋</button>}</div>
+        </header>
+        <div className="messages" ref={scrollRef}>
+          <div className="security-note"><span className="lock-dot">✓</span>Tin nhắn được truyền an toàn trong mạng nội bộ</div>
+          <div className="day-divider"><span>Cuộc trò chuyện</span></div>
+          {!messages.length && <div className="chat-empty"><strong>Chưa có tin nhắn</strong><p>Gửi tin nhắn để bắt đầu trò chuyện.</p></div>}
+          {messages.map(message => <div key={message.id} className={`message-row ${message.senderId === userId ? 'outgoing' : 'incoming'}`}>
+            {message.senderId !== userId && <span className={`avatar small avatar-${paletteColor(message.senderId)}`}>{message.senderName.slice(0, 1).toUpperCase()}</span>}
+            <div><div className="message-meta"><strong>{message.senderName}</strong><time>{new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(message.createdAt))}</time></div>{message.type === 'FILE' && message.file ? <FileMessage file={message.file} state={downloads[message.file.id]} onDownload={() => void downloadFile(message.file!.id)} /> : <div className="bubble">{message.type === 'FILE' ? 'Tệp đính kèm không còn khả dụng.' : message.content}</div>}</div>
+          </div>)}
+          {typing && <p className="chat-typing">Đang nhập…</p>}
+        </div>
+        {uploadState?.conversationId === active.id && <div className={`chat-upload-status is-${uploadState.status}`} role="status"><strong>{uploadState.name}</strong><small>{uploadState.status === 'complete' ? 'Đã gửi tệp' : uploadState.status === 'failed' ? uploadState.error : `${uploadState.percent ?? 0}% · ${formatFileSize(uploadState.loaded)} / ${formatFileSize(uploadState.total ?? 0)}`}</small>{uploadState.status === 'uploading' && <progress max={100} value={uploadState.percent ?? 0} />}{uploadState.status !== 'uploading' && <button type="button" aria-label="Đóng trạng thái tải lên" onClick={() => setUploadState(null)}>×</button>}</div>}
+        <form className="composer" onSubmit={event => { event.preventDefault(); void sendMessage(); }}>
+          {selectedFile && <div className="chat-pending-attachment"><strong>{selectedFile.name}</strong><small>{formatFileSize(selectedFile.size)} · Sẵn sàng gửi</small><button type="button" aria-label="Bỏ tệp đính kèm" onClick={() => setSelectedFile(null)} disabled={sending}>×</button></div>}
+          <button type="button" className="compose-button" title="Đính kèm tệp" onClick={() => fileInput.current?.click()} disabled={sending}>＋</button>
+          <input value={draft} onInput={event => { const value = event.currentTarget.value; setDraft(value); setError(''); if (active) realtimeClient.send({ type: value ? 'chat.typing.start' : 'chat.typing.stop', payload: { conversationId: active.id } }); }} maxLength={4000} placeholder={`Nhắn tin cho ${activeTitle}`} aria-label="Tin nhắn"/>
+          <input ref={fileInput} className="chat-file-picker" type="file" onChange={event => { const file = event.currentTarget.files?.[0]; setSelectedFile(file ?? null); event.currentTarget.value = ''; }} aria-label="Chọn tệp"/>
+          <button type="submit" className="send-button" title="Gửi tin nhắn" disabled={sending || (!draft.trim() && !selectedFile)}>{sending ? '…' : '➤'}</button>
+        </form>
+      </> : <div className="chat-empty chat-no-selection"><strong>Cuộc trò chuyện của bạn</strong><p>Chọn một thành viên hoặc tạo nhóm mới.</p></div>}</section>
+
+      <aside className="chat-info detail-panel" aria-label="Conversation details">{active ? <>
+        <div className="detail-top"><span className={`avatar avatar-${paletteColor(active.id)} profile-avatar`}>{activeTitle.slice(0, 1).toUpperCase()}<span className={activePeer && online.has(activePeer.userId) ? 'presence-dot' : 'presence-dot offline'}/></span><h2>{activeTitle}</h2><p>{active.type === 'GROUP' ? `${active.members.length} thành viên` : `@${activePeer?.username ?? ''}`} · {activePeer && online.has(activePeer.userId) ? 'Đang hoạt động' : 'Ngoại tuyến'}</p></div>
+        <nav className="chat-info-tabs"><button type="button" className={rightTab === 'details' ? 'is-active' : ''} onClick={() => setRightTab('details')}>Chi tiết</button><button type="button" className={rightTab === 'files' ? 'is-active' : ''} onClick={() => setRightTab('files')}>Tệp <span>{sharedFiles.length}</span></button></nav>
+        {rightTab === 'files' ? <section className="shared-files">{sharedFiles.length ? sharedFiles.map(file => <button key={file.id} onClick={() => void downloadFile(file.id, file.name)}><span className="file-icon">{file.name.split('.').pop()?.slice(0, 2).toUpperCase()}</span><span><strong>{file.name}</strong><small>{file.senderName} · {formatFileSize(file.size)}</small></span><span aria-hidden="true">↓</span></button>) : <p className="chat-info-empty">Chưa có tệp được chia sẻ.</p>}</section> : active.type === 'GROUP' ? <div className="detail-section"><div className="section-title"><strong>Thành viên</strong><span>{active.members.length}</span></div>{active.members.map(member => <div className="chat-info-member" key={member.userId}><span className="chat-avatar chat-info-member-avatar">{member.displayName.slice(0, 1).toUpperCase()}</span><span><strong>{member.displayName}</strong><small>{member.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}</small></span>{member.role === 'MEMBER' && active.members.some(item => item.role === 'ADMIN' && item.userId === userId) && <button aria-label={`Xóa ${member.displayName}`} onClick={() => void removePerson(member.userId, member.displayName)}>×</button>}</div>)}{active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="chat-info-add" onClick={() => void addPeople()}>＋ Thêm thành viên</button>}</div> : <div className="detail-section"><div className="section-title"><strong>Liên hệ</strong></div><p>{activePeer?.displayName}</p><small>@{activePeer?.username}</small></div>}
+      </> : <p className="chat-info-empty">Chọn cuộc trò chuyện để xem chi tiết.</p>}</aside>
+    </div>
   </div>;
 }

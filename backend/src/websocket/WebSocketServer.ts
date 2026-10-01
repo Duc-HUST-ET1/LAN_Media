@@ -48,7 +48,7 @@ export function attachWebSocketServer(server: Server): WsServer {
       socket.on('message', (raw) => { void (async () => {
         let type = '';
         try { type = (JSON.parse(raw.toString()) as { type?: string }).type ?? ''; } catch { /* ChatHandler reports malformed JSON. */ }
-        if (type.startsWith('call_') || type === 'webrtc_offer' || type === 'webrtc_answer' || type === 'ice_candidate') await callHandler.handle(socket, identity.user.id, raw);
+        if (type.startsWith('call_') || type === 'end_call' || type === 'webrtc_offer' || type === 'webrtc_answer' || type === 'ice_candidate') await callHandler.handle(socket, identity.user.id, raw);
         else await chatHandler.handle(socket, identity.user.id, raw);
       })(); });
       socket.on('close', () => {

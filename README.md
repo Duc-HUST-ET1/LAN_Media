@@ -64,9 +64,26 @@ docker compose up --build
 
 Compose publishes MySQL at port 3307 by default. The Node container connects to the Compose database internally.
 
-## LAN access
+## LAN access and browser calls
 
-The backend and Vite bind to `0.0.0.0`. From another device on the same network open `http://<LAN-IP>:5173`; find the host IPv4 address with `ipconfig`. Vite proxies REST and WebSocket traffic through the frontend origin. Allow Node.js through the host firewall on the private network. Set `FRONTEND_ORIGIN` to the exact origin when accessing the API directly from another origin.
+The backend and Vite bind to `0.0.0.0`. Find the host IPv4 address with `ipconfig`. Vite proxies REST and WebSocket traffic through the frontend origin. Allow Node.js through the host firewall on the private network.
+
+Camera and microphone access requires a secure browser context. `http://localhost:5173` works on the host computer, but `http://<LAN-IP>:5173` is not secure on another device. For LAN calling, install [mkcert](https://github.com/FiloSottile/mkcert) on the host and run:
+
+```powershell
+mkcert -install
+New-Item -ItemType Directory -Force certs
+mkcert -key-file certs/lan-media-key.pem -cert-file certs/lan-media-cert.pem localhost 127.0.0.1 <LAN-IP>
+```
+
+Replace `<LAN-IP>` with the host IPv4 address. Configure these values in `.env`:
+
+```dotenv
+VITE_HTTPS_KEY_FILE=certs/lan-media-key.pem
+VITE_HTTPS_CERT_FILE=certs/lan-media-cert.pem
+```
+
+Restart `npm run dev`, then open `https://<LAN-IP>:5173`. The mkcert root CA must also be trusted by each client device; `mkcert -install` trusts it only on the host. Export the CA certificate shown by `mkcert -CAROOT` and install/trust it on each phone or computer using that device's certificate settings, then reload the page. Keep the CA private key on the host and do not share it. The certificate and key files in `certs/` are ignored by Git.
 
 ## Checks
 
