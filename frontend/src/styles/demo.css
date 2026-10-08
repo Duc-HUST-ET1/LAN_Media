@@ -32,9 +32,12 @@ button { cursor: pointer; }
 }
 
 .brand-mark {
+  position: relative;
   width: 40px;
   height: 40px;
   border-radius: 12px;
+  padding: 0;
+  border: 0;
   display: grid;
   place-items: center;
   color: white;
@@ -43,6 +46,15 @@ button { cursor: pointer; }
   background: linear-gradient(145deg, #5d7aff, #3758e7);
   box-shadow: 0 8px 24px #223ebd66;
 }
+.brand-mark.avatar-brand { background: linear-gradient(145deg, #3fc6a0, #1f9d81); box-shadow: 0 8px 24px #137e6952; }
+.account-menu-wrapper { position: relative; z-index: 10; }
+.account-menu { position: absolute; top: 0; left: calc(100% + 12px); display: grid; width: 224px; gap: 4px; padding: 8px; border: 1px solid #e4e9f0; border-radius: 12px; background: #fff; box-shadow: 0 12px 32px #17202f24; }
+.account-menu-heading { display: grid; gap: 3px; padding: 9px 10px 11px; border-bottom: 1px solid #edf0f4; }
+.account-menu-heading strong { overflow: hidden; color: #29364b; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu-heading small { color: #8490a4; font-size: 10px; }
+.account-menu > button { min-height: 36px; padding: 0 10px; border-radius: 8px; color: #45536a; background: transparent; text-align: left; font-size: 11px; }
+.account-menu > button:hover { color: #3159dd; background: #f0f3ff; }
+.account-menu > button:last-child { color: #c34d58; }
 
 .rail-nav { margin-top: 58px; display: grid; gap: 12px; }
 .rail-bottom { margin-top: auto; display: grid; gap: 20px; justify-items: center; }
@@ -259,6 +271,18 @@ button { cursor: pointer; }
   background: #f8f9fb;
   padding: 28px 32px;
 }
+.profile-page { grid-column: 2 / -1; min-width: 0; overflow-y: auto; background: #f8f9fb; }
+.profile-page-header { padding: 28px 32px 22px; border-bottom: 1px solid #e7eaf0; background: #fff; }
+.profile-page-header .eyebrow { margin-bottom: 7px; }
+.profile-page-header h1 { margin: 0; color: #172033; font-size: 25px; }
+.profile-page-content { width: min(100%, 760px); padding: 26px 32px; }
+.profile-page-content .settings-avatar-block { margin-bottom: 22px; }
+.profile-display-name, .profile-username { display: block; }
+.profile-display-name { margin-bottom: 4px; color: #29364b; font-size: 14px; }
+.profile-username { margin-bottom: 12px; color: #8490a4; font-size: 11px; }
+.profile-page-content .settings-avatar-block > div p { margin-top: 2px; }
+.profile-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.profile-note { margin: 0; color: #8490a4; font-size: 11px; }
 
 /* ── Contacts ────────────────────────────────────────────────────────── */
 .contact-stats { display: flex; gap: 8px; padding: 0 22px 12px; }
@@ -398,6 +422,13 @@ button { cursor: pointer; }
 .settings-nav-item.active { background: #eef1ff; color: #4968f3; }
 .settings-nav-item span { flex: 1; }
 .settings-nav-item:last-child svg:last-child { opacity: .4; }
+.settings-general-grid { display: grid; max-width: 720px; gap: 10px; margin-top: 24px; }
+.settings-general-card { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 11px 14px; border: 1px solid #e8edf4; border-radius: 11px; color: #64728a; background: #fff; text-align: left; }
+.settings-general-card:hover { border-color: #cbd7fb; background: #f9faff; }
+.settings-general-card > span:nth-child(2) { display: grid; flex: 1; gap: 4px; }
+.settings-general-symbol { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 9px; color: #4968f3; background: #eef1ff; font-size: 18px; }
+.settings-general-card strong { color: #354258; font-size: 11px; }
+.settings-general-card small { color: #8490a4; font-size: 10px; }
 
 .settings-main { padding: 0; display: flex; flex-direction: column; }
 .settings-section { padding: 32px 36px; flex: 1; overflow-y: auto; }
@@ -477,10 +508,13 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   .demo-app-shell { min-height: 560px; grid-template-columns: 1fr; grid-template-rows: 1fr 64px; }
   .rail { grid-row: 2; flex-direction: row; padding: 0 15px; justify-content: space-around; border-top: 1px solid #263246; }
-  .brand-mark, .rail-bottom .rail-button { display: none; }
+  .brand-mark { width: 38px; height: 38px; }
   .rail-nav { width: 100%; margin: 0; display: flex; justify-content: space-around; }
-  .rail-bottom { margin: 0; display: block; }
-  .rail-bottom .avatar { width: 40px; height: 40px; }
+  .account-menu-wrapper { order: 3; }
+  .rail-nav { order: 1; flex: 1; }
+  .rail-bottom { order: 2; }
+  .rail-bottom { margin: 0; display: flex; align-items: center; }
+  .account-menu { top: auto; right: 0; bottom: calc(100% + 10px); left: auto; }
   .demo-app-shell--chat { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 64px; height: 100dvh; min-height: 0; }
   .demo-app-shell--chat > .rail { grid-column: 1; grid-row: 2; }
   .demo-app-shell--chat .live-chat-area { grid-column: 1; grid-row: 1; }
@@ -489,6 +523,15 @@ button { cursor: pointer; }
   .chat-header { height: 68px; padding: 0 15px; }
   .messages { padding: 16px 15px; }
   .composer { margin: 0 12px 12px; }
+  .full-panel { grid-column: 1; grid-row: 1; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); min-width: 0; overflow-y: auto; }
+  .full-sidebar { min-width: 0; border-right: 0; border-bottom: 1px solid #e6e9ee; }
+  .full-main { min-width: 0; padding: 16px; }
+  .settings-section { padding: 22px 16px; }
+  .settings-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-page { grid-column: 1; grid-row: 1; min-height: 0; }
+  .profile-page-header { padding: 20px 18px 16px; }
+  .profile-page-content { padding: 18px; }
+  .profile-fields { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 420px) {

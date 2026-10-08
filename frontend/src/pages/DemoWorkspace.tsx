@@ -4,6 +4,8 @@ import { ChatApi, type Conversation } from "../api/ChatApi";
 import { FileApi } from "../api/FileApi";
 import { realtimeClient, type RealtimeEvent } from "../api/RealtimeClient";
 import ChatPage from "./ChatPage/ChatPage";
+import ProfilePage from "./ProfilePage";
+import SettingsOverview, { type SettingsSection } from "./SettingsOverview";
 import type { CallController } from "../hooks/useCall";
 
 type IconName =
@@ -129,10 +131,12 @@ function formatBytes(bytes: number) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-type TabId = "message" | "users" | "files" | "calls" | "settings";
+type TabId = "message" | "users" | "files" | "calls" | "settings" | "profile";
 
 export default function DemoWorkspace({ user, call, initialTab = "calls", onOpenChat, onLogout }: { user: AuthUser; call: CallController; initialTab?: TabId; onOpenChat: () => void; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const [people, setPeople] = useState<AuthUser[]>([]);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -143,7 +147,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   const [fileFilter, setFileFilter] = useState<"all" | "docs" | "media" | "design">("all");
   const [fileView, setFileView] = useState<"grid" | "list">("list");
   const [callFilter, setCallFilter] = useState<"all" | "missed">("all");
-  const [settingsSection, setSettingsSection] = useState<"profile" | "network" | "notifications" | "security" | "appearance">("profile");
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("general");
   const [notifChat, setNotifChat] = useState(true);
   const [notifCall, setNotifCall] = useState(true);
   const [notifFile, setNotifFile] = useState(false);
@@ -153,6 +157,22 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   const [contactQuery, setContactQuery] = useState("");
 
   useEffect(() => { setActiveTab(initialTab); }, [initialTab]);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (event.target instanceof Node && !accountMenuRef.current?.contains(event.target)) setAccountMenuOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    }
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [accountMenuOpen]);
 
   useEffect(() => {
     let current = true;
@@ -272,7 +292,16 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
 
       {/* Rail */}
       <aside className="rail">
-        <div className="brand-mark" aria-label="LAN Media">L</div>
+        <div className="account-menu-wrapper" ref={accountMenuRef}>
+          <button className="brand-mark avatar-brand" type="button" title={user.displayName} aria-label={`Tài khoản ${user.displayName}`} aria-haspopup="menu" aria-expanded={accountMenuOpen} onClick={() => setAccountMenuOpen(open => !open)}>
+            {user.displayName.trim().slice(0, 1).toUpperCase()}<span className="presence-dot" />
+          </button>
+          {accountMenuOpen && <div className="account-menu" role="menu">
+            <div className="account-menu-heading"><strong>{user.displayName}</strong><small>@{user.username}</small></div>
+            <button type="button" role="menuitem" onClick={() => { setActiveTab("profile"); setAccountMenuOpen(false); }}>Hồ sơ cá nhân</button>
+            <button type="button" role="menuitem" onClick={() => { setAccountMenuOpen(false); onLogout(); }}>Đăng xuất</button>
+          </div>}
+        </div>
         <nav className="rail-nav" aria-label="Điều hướng chính">
           {navItems.map((item) => (
             <button
@@ -294,16 +323,16 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
           <button
             className={`rail-button ${activeTab === "settings" ? "active" : ""}`}
             title="Cài đặt"
-            onClick={() => setActiveTab("settings")}
+            onClick={() => { setSettingsSection("general"); setActiveTab("settings"); }}
           >
             <Icon name="settings" />
           </button>
-          <button className="avatar avatar-me" title={user.displayName} onClick={onLogout}>{user.displayName.slice(0, 1).toUpperCase()}<span className="presence-dot" /></button>
         </div>
       </aside>
 
       {/* ── Message Tab ──────────────────────────────────────────────────── */}
       {activeTab === "message" && <div className="live-chat-area"><ChatPage userId={user.id} call={call} /></div>}
+      {activeTab === "profile" && <ProfilePage user={user} onChangeAvatar={() => showNotice("Chọn ảnh đại diện...")} />}
       
 
       {/* ── Contacts Tab ─────────────────────────────────────────────────── */}
@@ -559,16 +588,16 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
               </div>
             </header>
             <div className="settings-profile-mini">
-              <button className="avatar avatar-me settings-avatar">TN<span className="presence-dot" /></button>
+              <button className="avatar avatar-me settings-avatar">{user.displayName.trim().slice(0, 1).toUpperCase()}<span className="presence-dot" /></button>
               <div>
                 <strong>{user.displayName}</strong>
                 <span>@{user.username}</span>
               </div>
             </div>
             <nav className="settings-nav">
-              {(["profile", "network", "notifications", "security", "appearance"] as const).map((s) => {
-                const labels = { profile: "Hồ sơ cá nhân", network: "Mạng & kết nối", notifications: "Thông báo", security: "Bảo mật", appearance: "Giao diện" };
-                const icons: Record<string, IconName> = { profile: "user", network: "wifi", notifications: "bell", security: "shield", appearance: "grid" };
+              {(["general", "network", "notifications", "security", "appearance"] as const).map((s) => {
+                const labels: Record<SettingsSection, string> = { general: "Cài đặt chung", network: "Mạng & kết nối", notifications: "Thông báo", security: "Bảo mật", appearance: "Giao diện" };
+                const icons: Record<SettingsSection, IconName> = { general: "settings", network: "wifi", notifications: "bell", security: "shield", appearance: "grid" };
                 return (
                   <button key={s} className={`settings-nav-item ${settingsSection === s ? "active" : ""}`} onClick={() => setSettingsSection(s)}>
                     <Icon name={icons[s]} size={17} />
@@ -581,42 +610,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
           </div>
 
           <div className="full-main settings-main">
-            {settingsSection === "profile" && (
-              <div className="settings-section">
-                <h2>Hồ sơ cá nhân</h2>
-                <div className="settings-avatar-block">
-                  <button className="avatar avatar-me settings-avatar-lg">{user.displayName.slice(0, 1).toUpperCase()}<span className="presence-dot" /></button>
-                  <div>
-                    <button className="settings-upload-btn" onClick={() => showNotice("Chọn ảnh đại diện...")}>Thay đổi ảnh</button>
-                    <p>PNG, JPG tối đa 5MB</p>
-                  </div>
-                </div>
-                <div className="settings-form">
-                  <div className="settings-field">
-                    <label>Họ và tên</label>
-                    <input value={user.displayName} readOnly />
-                  </div>
-                  <div className="settings-field">
-                    <label>Tên hiển thị</label>
-                    <input value={user.username} readOnly />
-                  </div>
-                  <div className="settings-field">
-                    <label>Vai trò</label>
-                    <input value={user.role === "ADMIN" ? "Quản trị viên" : "Thành viên"} readOnly />
-                  </div>
-                  <div className="settings-field">
-                    <label>Trạng thái</label>
-                    <select defaultValue="online">
-                      <option value="online">Đang hoạt động</option>
-                      <option value="busy">Bận</option>
-                      <option value="away">Vắng mặt</option>
-                      <option value="offline">Ngoại tuyến</option>
-                    </select>
-                  </div>
-                </div>
-                <p className="settings-subsection">Thông tin hồ sơ được quản lý bởi tài khoản hiện tại.</p>
-              </div>
-            )}
+            {settingsSection === "general" && <SettingsOverview onSelect={setSettingsSection} />}
 
             {settingsSection === "network" && (
               <div className="settings-section">
