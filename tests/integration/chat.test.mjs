@@ -101,6 +101,12 @@ test('authenticated WebSocket chat, presence and persistent conversations work',
   socketA = await connect(wsUrl, alice.cookie);
   const group = await fetch(`${baseUrl}/api/conversations/group`, { method: 'POST', headers: { Cookie: alice.cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Phase Three', memberIds: [bob.user.id] }) });
   assert.equal(group.status, 201, await group.clone().text()); groupId = (await group.json()).conversation.id;
+  const followUp = await fetch(`${baseUrl}/api/conversations/${directId}/messages`, { method: 'POST', headers: { Cookie: alice.cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'Move direct chat to top' }) });
+  assert.equal(followUp.status, 201, await followUp.clone().text());
+  for (const cookie of [alice.cookie, bob.cookie]) {
+    const conversations = await fetch(`${baseUrl}/api/conversations`, { headers: { Cookie: cookie } });
+    assert.equal((await conversations.json()).conversations[0].id, directId);
+  }
   const forbidden = await fetch(`${baseUrl}/api/conversations/${groupId}/members`, { method: 'POST', headers: { Cookie: bob.cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ memberIds: [alice.user.id] }) });
   assert.equal(forbidden.status, 403);
   const unauthenticated = new WebSocket(wsUrl);

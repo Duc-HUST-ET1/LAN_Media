@@ -36,8 +36,18 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
   const visibleConversations = useMemo(() => conversations.filter(item => {
     const peer = item.members.find(member => member.userId !== userId);
     const label = item.type === 'GROUP' ? item.name ?? 'Nhóm' : peer?.displayName ?? 'Trò chuyện';
-    return label.toLocaleLowerCase().includes(query.toLocaleLowerCase());
+    const searchText = query.trim().toLocaleLowerCase();
+    return label.toLocaleLowerCase().includes(searchText) || (peer?.username.toLocaleLowerCase().includes(searchText) ?? false);
   }), [conversations, query, userId]);
+  const matchingContacts = useMemo(() => {
+    const searchText = query.trim().toLocaleLowerCase();
+    if (!searchText) return [];
+    const existingDirectMembers = new Set(conversations
+      .filter(conversation => conversation.type === 'DIRECT')
+      .flatMap(conversation => conversation.members.map(member => member.userId)));
+    return contacts.filter(person => !existingDirectMembers.has(person.id)
+      && (person.displayName.toLocaleLowerCase().includes(searchText) || person.username.toLocaleLowerCase().includes(searchText)));
+  }, [contacts, conversations, query]);
   const activePeer = active?.members.find(member => member.userId !== userId);
   const activeTitle = active?.type === 'GROUP' ? active.name ?? 'Group conversation' : activePeer?.displayName ?? 'Direct conversation';
   const refresh = useCallback(async () => {
@@ -172,13 +182,11 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
               <span className="conversation-copy"><span className="conversation-top"><strong>{label}</strong><time>{lastUpdated}</time></span><span className="conversation-preview">{conversation.type === 'GROUP' ? `${conversation.members.length} thành viên` : `@${peer?.username ?? ''}`}</span></span>
             </button>;
           })}
-          {!visibleConversations.length && <p className="empty-state">Không tìm thấy cuộc trò chuyện.</p>}
-          <div className="chat-section-title chat-contacts-title">DANH BẠ</div>
-          {contacts.filter(person => person.displayName.toLocaleLowerCase().includes(query.toLocaleLowerCase()) || person.username.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(person => <button key={person.id} className="conversation" onClick={() => void openDirect(person.id)} disabled={busy}>
+          {matchingContacts.map(person => <button key={person.id} className="conversation" onClick={() => void openDirect(person.id)} disabled={busy}>
             <span className={`avatar avatar-${paletteColor(person.id)}`}>{person.displayName.slice(0, 1).toUpperCase()}{online.has(person.id) && <span className="presence-dot"/>}</span>
             <span className="conversation-copy"><span className="conversation-top"><strong>{person.displayName}</strong></span><span className="conversation-preview">@{person.username}</span></span>
           </button>)}
-          {!contacts.length && <p className="empty-state">Chưa có thành viên khác.</p>}
+          {!visibleConversations.length && !matchingContacts.length && <p className="empty-state">{query.trim() ? 'Không tìm thấy người hoặc cuộc trò chuyện.' : 'Chưa có cuộc trò chuyện. Tìm người để bắt đầu nhắn tin.'}</p>}
         </div>
         <div className="network-card"><span className="network-pulse"><span/></span><div><strong>LAN đã kết nối</strong><small>{online.size} thành viên đang trực tuyến</small></div></div>
       </aside>

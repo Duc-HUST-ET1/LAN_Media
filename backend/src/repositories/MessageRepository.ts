@@ -16,12 +16,14 @@ export class MessageRepository {
   async create(conversationId: string, senderId: string, content: string): Promise<Message> {
     const id = randomUUID();
     await this.database.execute("INSERT INTO messages (id, conversation_id, sender_id, body, type, content) VALUES (?, ?, ?, ?, 'TEXT', ?)", [id, conversationId, senderId, content, content]);
+    await this.touchConversation(conversationId);
     return this.get(id);
   }
   async createFile(conversationId: string, senderId: string, fileId: string): Promise<Message> {
     const id = randomUUID();
     await this.database.execute("INSERT INTO messages (id, conversation_id, sender_id, body, type, content) VALUES (?, ?, ?, ?, 'FILE', ?)", [id, conversationId, senderId, '[file]', fileId]);
     await this.database.execute('UPDATE files SET message_id = ? WHERE id = ?', [id, fileId]);
+    await this.touchConversation(conversationId);
     return this.get(id);
   }
   async get(id: string): Promise<Message> {
@@ -33,6 +35,11 @@ export class MessageRepository {
     const rows = await this.database.query<MessageRow>(`${selectMessage} WHERE m.conversation_id = ? ${before ? 'AND m.created_at < ?' : ''}
       ORDER BY m.created_at DESC LIMIT ?`, before ? [conversationId, new Date(before), limit] : [conversationId, limit]);
     return rows.map(row => this.map(row)).reverse();
+  }
+  private async touchConversation(conversationId: string): Promise<void> {
+    await this.database.execute(`UPDATE conversations
+      SET updated_at = GREATEST(CURRENT_TIMESTAMP(3), updated_at + INTERVAL 1000 MICROSECOND)
+      WHERE id = ?`, [conversationId]);
   }
   private map(row: MessageRow): Message {
     const file: FileMetadata | undefined = row.file_id ? {
