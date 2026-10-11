@@ -30,11 +30,11 @@ function toUser(row: SessionUserRow): User {
 export class SessionRepository {
   constructor(private readonly database: Database) {}
 
-  async createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<string> {
+  async createSession(userId: string, tokenHash: string, expiresAt: Date, deviceId?: string): Promise<string> {
     const id = randomUUID();
     await this.database.execute(
-      'INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)',
-      [id, userId, tokenHash, expiresAt],
+      'INSERT INTO sessions (id, user_id, token_hash, expires_at, device_id) VALUES (?, ?, ?, ?, ?)',
+      [id, userId, tokenHash, expiresAt, deviceId ?? null],
     );
     return id;
   }
@@ -64,6 +64,16 @@ export class SessionRepository {
       'UPDATE sessions SET revoked_at = UTC_TIMESTAMP(3) WHERE token_hash = ? AND revoked_at IS NULL',
       [tokenHash],
     );
+  }
+
+  async revokeSessionById(sessionId: string, userId: string): Promise<boolean> {
+    const result = await this.database.execute('UPDATE sessions SET revoked_at = UTC_TIMESTAMP(3) WHERE id = ? AND user_id = ? AND revoked_at IS NULL', [sessionId, userId]);
+    return result.affectedRows > 0;
+  }
+
+  async touchActivity(sessionId:string):Promise<void>{
+    await this.database.execute(`UPDATE devices d JOIN sessions s ON s.device_id=d.id SET d.last_seen_at=UTC_TIMESTAMP(3),d.last_active_at=UTC_TIMESTAMP(3)
+      WHERE s.id=? AND (d.last_active_at IS NULL OR d.last_active_at<DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 5 MINUTE))`,[sessionId]);
   }
 
   async deleteExpiredSessions(): Promise<number> {

@@ -80,7 +80,7 @@ export default function App() {
 
   if (auth.user && route !== '/login' && route !== '/register') {
     const initialTab = route === '/files' ? 'files' : route === '/calls' ? 'calls' : route === '/settings' ? 'settings' : 'message';
-    return <><DemoWorkspace user={auth.user} call={call} initialTab={initialTab} onOpenChat={() => navigate('/chat')} onLogout={() => void handleLogout()} /><CallDialog call={call} contacts={[]} /></>;
+    return <><DemoWorkspace user={auth.user} call={call} initialTab={initialTab} websocketStatus={realtime.status} onOpenChat={() => navigate('/chat')} onLogout={() => void handleLogout()} /><CallDialog call={call} contacts={[]} /></>;
   }
 
   let pageContent: ReactNode;

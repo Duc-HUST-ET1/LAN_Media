@@ -21,6 +21,12 @@ export class ConnectionManager {
   }
   isOnline(userId: string): boolean { return (this.byUser.get(userId)?.size ?? 0) > 0; }
   onlineUserIds(): string[] { return [...this.byUser.keys()]; }
+  activeSessionIds(): Set<string> { return new Set([...this.byUser.values()].flatMap(items => [...items].map(item => item.sessionId))); }
+  closeSession(sessionId: string): void {
+    for (const connections of this.byUser.values()) for (const connection of connections) {
+      if (connection.sessionId === sessionId && connection.socket.readyState === WebSocket.OPEN) connection.socket.close(4401, 'Session revoked');
+    }
+  }
   sendToUser(userId: string, event: unknown): void {
     const encoded = JSON.stringify(event);
     for (const connection of this.byUser.get(userId) ?? []) if (connection.socket.readyState === WebSocket.OPEN) connection.socket.send(encoded);

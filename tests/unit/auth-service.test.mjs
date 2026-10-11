@@ -20,7 +20,8 @@ function makeService() {
     async createSession(userId, tokenHash, expiresAt) { sessions.set(tokenHash, { userId, expiresAt }); return 'session-id'; },
     async revokeSession(tokenHash) { sessions.delete(tokenHash); },
   };
-  return { service: new AuthService(userRepository, sessionRepository), users, sessions };
+  const devices = { async touchDevice(input) { return input.id; } };
+  return { service: new AuthService(userRepository, sessionRepository, undefined, undefined, devices), users, sessions };
 }
 
 test('registration validates inputs, stores a hash and creates a session', async () => {

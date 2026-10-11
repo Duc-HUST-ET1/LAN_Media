@@ -5,7 +5,7 @@ export interface ChatFile { id: string; name: string; size: number; mimeType: st
 export interface ConversationFile extends ChatFile { senderName: string; createdAt: string; }
 export interface ChatMessage { id: string; conversationId: string; senderId: string; senderName: string; type: 'TEXT' | 'FILE'; content: string; file?: ChatFile; createdAt: string; }
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...init?.headers } });
+  const response = await fetch(apiUrl(`/api${path}`), { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...init?.headers } });
   const body = response.status === 204 ? undefined : await response.json() as { error?: { message?: string } } & T;
   if (!response.ok) throw new Error(body?.error?.message ?? 'Request failed.');
   return body as T;
@@ -22,3 +22,4 @@ export const ChatApi = {
   async addMembers(id: string, memberIds: string[]) { return (await request<{ conversation: Conversation }>(`/conversations/${encodeURIComponent(id)}/members`, { method: 'POST', body: JSON.stringify({ memberIds }) })).conversation; },
   removeMember(id: string, userId: string) { return request<void>(`/conversations/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }); },
 };
+import { apiUrl } from './ServerConfig';

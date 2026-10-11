@@ -6,6 +6,7 @@ import { realtimeClient, type RealtimeEvent } from "../api/RealtimeClient";
 import ChatPage from "./ChatPage/ChatPage";
 import ProfilePage from "./ProfilePage";
 import SettingsOverview, { type SettingsSection } from "./SettingsOverview";
+import NetworkManagement from "../components/NetworkManagement";
 import type { CallController } from "../hooks/useCall";
 
 type IconName =
@@ -133,7 +134,7 @@ function formatBytes(bytes: number) {
 
 type TabId = "message" | "users" | "files" | "calls" | "settings" | "profile";
 
-export default function DemoWorkspace({ user, call, initialTab = "calls", onOpenChat, onLogout }: { user: AuthUser; call: CallController; initialTab?: TabId; onOpenChat: () => void; onLogout: () => void }) {
+export default function DemoWorkspace({ user, call, initialTab = "calls", onOpenChat, onLogout, websocketStatus = 'disconnected' }: { user: AuthUser; call: CallController; initialTab?: TabId; onOpenChat: () => void; onLogout: () => void; websocketStatus?: 'connected'|'connecting'|'disconnected' }) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -612,39 +613,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
           <div className="full-main settings-main">
             {settingsSection === "general" && <SettingsOverview onSelect={setSettingsSection} />}
 
-            {settingsSection === "network" && (
-              <div className="settings-section">
-                <h2>Mạng &amp; kết nối</h2>
-                <div className="network-status-card">
-                  <div className="network-status-icon connected"><Icon name="wifi" size={22} /></div>
-                  <div>
-                    <strong>Đã kết nối LAN</strong>
-                    <p>Mạng nội bộ hoạt động bình thường</p>
-                  </div>
-                  <span className="net-badge connected">Ổn định</span>
-                </div>
-                <div className="settings-info-grid">
-                  <div className="info-block"><span>Tài khoản</span><strong>@{user.username}</strong></div>
-                  <div className="info-block"><span>Vai trò</span><strong>{user.role === "ADMIN" ? "Quản trị viên" : "Thành viên"}</strong></div>
-                  <div className="info-block"><span>Thành viên</span><strong>{contacts.length}</strong></div>
-                  <div className="info-block"><span>Đang trực tuyến</span><strong>{contacts.filter(c => c.online).length}</strong></div>
-                </div>
-                <h3 className="settings-subsection">Thiết bị đang kết nối</h3>
-                <div className="devices-list">
-                  {contacts.map((c) => (
-                    <div key={c.id} className="device-row">
-                      <span className={`avatar avatar-${c.color} small`}>{c.initials}<span className={c.online ? "presence-dot" : "presence-dot offline"} /></span>
-                      <div>
-                        <strong>{c.name}</strong>
-                        <span>@{people.find(person => person.id === c.id)?.username}</span>
-                      </div>
-                      <span className={`net-badge ${c.online ? "connected" : ""}`}>{c.online ? "Online" : "Offline"}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
+            {settingsSection === "network" && <NetworkManagement websocketStatus={websocketStatus} />}
             {settingsSection === "notifications" && (
               <div className="settings-section">
                 <h2>Thông báo</h2>

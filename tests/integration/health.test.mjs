@@ -29,7 +29,7 @@ async function waitFor(url, child) {
 test('backend health API and LAN binding respond through the frontend proxy', async (t) => {
   const backendPort = await unusedPort();
   const frontendPort = await unusedPort();
-  const env = { ...process.env, HOST: '0.0.0.0', PORT: String(backendPort), FRONTEND_PORT: String(frontendPort) };
+  const env = { ...process.env, HOST: '0.0.0.0', PORT: String(backendPort), FRONTEND_PORT: String(frontendPort), LAN_MEDIA_TEST_HTTP: 'true' };
   const backend = spawn(process.execPath, ['--watch', 'backend/dist/main.js'], { env, stdio: 'ignore' });
   const frontend = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--config', 'frontend/vite.config.ts', '--host', '127.0.0.1', '--port', String(frontendPort), '--strictPort'], { env, stdio: 'ignore' });
   t.after(() => { backend.kill(); frontend.kill(); });

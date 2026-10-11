@@ -7,6 +7,7 @@ import { TokenManager } from './TokenManager.js';
 export const sessionCookieName = 'lan_media_session';
 const sessions = new SessionRepository(database);
 const tokens = new TokenManager();
+const activityTouch = new Map<string,number>();
 
 export function getSessionToken(request: Request): string | null {
   const cookieHeader = request.headers.cookie;
@@ -44,12 +45,15 @@ export const requireAuth: RequestHandler = async (request, response, next) => {
       response.status(401).json({ error: { message: 'Authentication required.' } });
       return;
     }
-    const user: User | null = await sessions.findSession(tokens.hashToken(token));
-    if (!user) {
+    const identity = await sessions.findSessionIdentity(tokens.hashToken(token));
+    if (!identity) {
       response.status(401).json({ error: { message: 'Authentication required.' } });
       return;
     }
-    response.locals.authenticatedUser = user;
+    response.locals.authenticatedUser = identity.user;
+    response.locals.sessionId = identity.id;
+    const now=Date.now();
+    if(now-(activityTouch.get(identity.id)??0)>5*60*1000){activityTouch.set(identity.id,now);void sessions.touchActivity(identity.id).catch(()=>{});}
     next();
   } catch (error) {
     next(error);

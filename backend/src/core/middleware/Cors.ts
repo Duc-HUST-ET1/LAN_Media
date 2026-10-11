@@ -14,7 +14,7 @@ export const corsMiddleware: RequestHandler = (request, response, next) => {
   }
 
   if (request.method === 'OPTIONS') {
-    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     response.status(204).end();
     return;

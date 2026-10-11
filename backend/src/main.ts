@@ -11,7 +11,10 @@ import { healthRoutes } from './routes/HealthRoutes.js';
 import { chatRoutes } from './routes/ChatRoutes.js';
 import { userRoutes } from './routes/UserRoutes.js';
 import { fileRoutes } from './routes/FileRoutes.js';
+import { deviceRoutes } from './routes/DeviceRoutes.js';
+import { networkRoutes } from './routes/NetworkRoutes.js';
 import { attachWebSocketServer } from './websocket/WebSocketServer.js';
+import { NetworkDiscoveryService } from './services/NetworkDiscoveryService.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -22,12 +25,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api', chatRoutes);
 app.use('/api', fileRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/devices', deviceRoutes);
+app.use('/api/network', networkRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 async function start(): Promise<void> {
   const server = createServer(app);
   attachWebSocketServer(server);
+  new NetworkDiscoveryService().start();
   try {
     await runMigrations(database);
   } catch (error) {

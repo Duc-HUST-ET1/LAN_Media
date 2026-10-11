@@ -5,18 +5,19 @@ import { database } from '../core/database/Database.js';
 import { SessionRepository } from '../repositories/SessionRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import { AuthService } from '../services/AuthService.js';
+import { DeviceRepository } from '../repositories/DeviceRepository.js';
 
-const authService = new AuthService(new UserRepository(database), new SessionRepository(database));
+const authService = new AuthService(new UserRepository(database), new SessionRepository(database), undefined, undefined, new DeviceRepository(database));
 const cookieMaxAge = appConfig.sessionTtlHours * 60 * 60;
 
 export async function register(request: Request, response: Response): Promise<void> {
-  const session = await authService.register(request.body as unknown);
+  const session = await authService.register(request.body as unknown, request.get('user-agent') ?? '');
   response.setHeader('Set-Cookie', serializeSessionCookie(session.token, cookieMaxAge));
   response.status(201).json({ user: session.user });
 }
 
 export async function login(request: Request, response: Response): Promise<void> {
-  const session = await authService.login(request.body as unknown);
+  const session = await authService.login(request.body as unknown, request.get('user-agent') ?? '');
   response.setHeader('Set-Cookie', serializeSessionCookie(session.token, cookieMaxAge));
   response.status(200).json({ user: session.user });
 }

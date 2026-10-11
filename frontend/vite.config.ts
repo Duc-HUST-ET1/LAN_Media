@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const https = env.VITE_HTTPS_KEY_FILE && env.VITE_HTTPS_CERT_FILE
+  const https = env.LAN_MEDIA_TEST_HTTP !== 'true' && env.VITE_HTTPS_KEY_FILE && env.VITE_HTTPS_CERT_FILE
     ? {
         key: readFileSync(resolve(process.cwd(), env.VITE_HTTPS_KEY_FILE)),
         cert: readFileSync(resolve(process.cwd(), env.VITE_HTTPS_CERT_FILE)),

@@ -14,6 +14,8 @@ export const appConfig = {
   uploadDir: process.env.UPLOAD_DIR ?? './uploads',
   maxFileSize: Number(process.env.MAX_FILE_SIZE ?? 104857600),
   allowedFileTypes: (process.env.ALLOWED_FILE_TYPES ?? '*').split(',').map(value => value.trim().toLowerCase()).filter(Boolean),
+  discoveryPort: Number(process.env.DISCOVERY_PORT ?? 30301),
+  discoveryEnabled: process.env.DISCOVERY_ENABLED === 'true',
 };
 
 if (!Number.isFinite(appConfig.sessionTtlHours) || appConfig.sessionTtlHours < 1) {

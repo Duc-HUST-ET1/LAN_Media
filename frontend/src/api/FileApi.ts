@@ -28,7 +28,7 @@ export const FileApi = {
   async download(fileId: string, suggestedName: string, onProgress: (progress: TransferProgress) => void): Promise<void> {
     const savePicker = (window as SavePickerWindow).showSaveFilePicker;
     const handle = savePicker ? await savePicker.call(window, { suggestedName }) : undefined;
-    const response = await fetch(`/api/files/${encodeURIComponent(fileId)}/download`, { credentials: 'include' });
+    const response = await fetch(apiUrl(`/api/files/${encodeURIComponent(fileId)}/download`), { credentials: 'include' });
     if (!response.ok) {
       let message = 'Download failed.';
       try { message = (await response.json() as { error?: { message?: string } }).error?.message ?? message; } catch { /* keep fallback */ }
@@ -64,3 +64,4 @@ export const FileApi = {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 };
+import { apiUrl } from './ServerConfig';

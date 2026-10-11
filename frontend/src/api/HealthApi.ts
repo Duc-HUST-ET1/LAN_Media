@@ -4,10 +4,10 @@ export interface BackendHealth {
   database: 'connected' | 'disconnected';
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
+import { apiUrl } from './ServerConfig';
 
 export async function getHealth(): Promise<BackendHealth> {
-  const response = await fetch(`${apiBaseUrl}/api/health`);
+  const response = await fetch(apiUrl('/api/health'),{signal:AbortSignal.timeout(5000)});
   const health = await response.json() as BackendHealth;
   if (response.status >= 500 && !health.database) throw new Error(`Health request failed with HTTP ${response.status}`);
   return health;

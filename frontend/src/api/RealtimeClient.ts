@@ -25,8 +25,10 @@ class RealtimeClient {
   private open(): void {
     if (!this.active) return;
     this.setStatus('connecting');
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${protocol}//${location.host}/ws`;
+    const serverUrl = configuredServerUrl() || location.origin;
+    const parsed = new URL(serverUrl);
+    const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${protocol}//${parsed.host}/ws`;
     console.info('[realtime] connecting:', url);
     const socket = new WebSocket(url);
     this.socket = socket;
@@ -49,3 +51,4 @@ class RealtimeClient {
   private setStatus(status: 'connected' | 'connecting' | 'disconnected'): void { for (const listener of this.statusListeners) listener(status); }
 }
 export const realtimeClient = new RealtimeClient();
+import { configuredServerUrl } from './ServerConfig';

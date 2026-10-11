@@ -2,11 +2,13 @@ import type { Database } from './Database.js';
 import { up as initialSchema } from './migrations/InitialSchema.js';
 import { up as chatSchema } from './migrations/ChatSchema.js';
 import { up as fileTransferSchema } from './migrations/FileTransferSchema.js';
+import { up as deviceSessionSchema } from './migrations/DeviceSessionSchema.js';
 
 const migrations = [
   { version: '001_initial_schema', up: initialSchema },
   { version: '002_chat_schema', up: chatSchema },
   { version: '003_file_transfer_schema', up: fileTransferSchema },
+  { version: '004_device_session_schema', up: deviceSessionSchema },
 ];
 
 export async function runMigrations(database: Database): Promise<void> {

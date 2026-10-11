@@ -5,6 +5,8 @@ import { TokenManager } from '../core/security/TokenManager.js';
 import { UserRepository, toPublicUser } from '../repositories/UserRepository.js';
 import { SessionRepository } from '../repositories/SessionRepository.js';
 import type { User } from '../models/User.js';
+import { randomUUID } from 'node:crypto';
+import type { DeviceRepository } from '../repositories/DeviceRepository.js';
 
 export interface AuthenticatedSession {
   user: User;
@@ -33,9 +35,10 @@ export class AuthService {
     private readonly sessions: SessionRepository,
     private readonly passwordHasher = new PasswordHasher(),
     private readonly tokenManager = new TokenManager(),
+    private readonly devices: DeviceRepository,
   ) {}
 
-  async register(input: unknown): Promise<AuthenticatedSession> {
+  async register(input: unknown, userAgent = ''): Promise<AuthenticatedSession> {
     if (!isObject(input)) throw new ApiError(400, 'A JSON object is required.');
     const username = requireString(input.username, 'Username').trim().toLowerCase();
     const email = requireString(input.email, 'Email').trim().toLowerCase();
@@ -57,14 +60,14 @@ export class AuthService {
 
     try {
       const created = await this.users.createUser({ username, email, displayName, passwordHash: await this.passwordHasher.hash(password) });
-      return await this.createSession(created.id, toPublicUser(created));
+      return await this.createSession(created.id, toPublicUser(created), input, userAgent);
     } catch (error) {
       if (isDuplicateEntry(error)) throw new ApiError(409, 'Username or email is already in use.');
       throw error;
     }
   }
 
-  async login(input: unknown): Promise<AuthenticatedSession> {
+  async login(input: unknown, userAgent = ''): Promise<AuthenticatedSession> {
     if (!isObject(input)) throw new ApiError(400, 'A JSON object is required.');
     const identifier = requireString(input.identifier ?? input.username, 'Username or email').trim().toLowerCase();
     const password = requireString(input.password, 'Password');
@@ -75,17 +78,22 @@ export class AuthService {
     if (!user || !passwordMatches) {
       throw new ApiError(401, 'Invalid username/email or password.');
     }
-    return this.createSession(user.id, toPublicUser(user));
+    return this.createSession(user.id, toPublicUser(user), input, userAgent);
   }
 
   async logout(token: string | null): Promise<void> {
     if (token) await this.sessions.revokeSession(this.tokenManager.hashToken(token));
   }
 
-  private async createSession(userId: string, user: User): Promise<AuthenticatedSession> {
+  private async createSession(userId: string, user: User, input?: unknown, userAgent = ''): Promise<AuthenticatedSession> {
     const token = this.tokenManager.createToken();
     const expiresAt = new Date(Date.now() + appConfig.sessionTtlHours * 60 * 60 * 1000);
-    await this.sessions.createSession(userId, this.tokenManager.hashToken(token), expiresAt);
+    const metadata = isObject(input) && isObject(input.device) ? input.device : {};
+    const deviceId = typeof metadata.id === 'string' && /^[0-9a-f-]{36}$/i.test(metadata.id) ? metadata.id : randomUUID();
+    const name = typeof metadata.name === 'string' ? metadata.name.trim().slice(0, 120) : '';
+    const browser = userAgent.slice(0, 120) || null;
+    const ownedDeviceId=await this.devices.touchDevice({ id: deviceId, userId, name: name || 'Browser device', deviceType: 'browser', browserInfo: browser });
+    await this.sessions.createSession(userId, this.tokenManager.hashToken(token), expiresAt, ownedDeviceId);
     return { user, token, expiresAt };
   }
 }
