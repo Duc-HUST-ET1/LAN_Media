@@ -28,6 +28,11 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
   const [uploadState, setUploadState] = useState<{ conversationId: string; name: string; status: 'uploading' | 'complete' | 'failed'; loaded: number; total?: number; percent?: number; error?: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [groupQuery, setGroupQuery] = useState('');
+  const [groupMemberIds, setGroupMemberIds] = useState<string[]>([]);
+  const [groupCreateError, setGroupCreateError] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
@@ -95,14 +100,26 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
   }, [activeId, refresh]);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); }, [messages]);
   async function openDirect(id: string) { setBusy(true); try { const conversation = await ChatApi.direct(id); await refresh(); setActiveId(conversation.id); } catch (e) { setError(e instanceof Error ? e.message : 'Could not open chat.'); } finally { setBusy(false); } }
+  function closeGroupModal() {
+    if (busy) return;
+    setGroupModalOpen(false);
+    setGroupCreateError('');
+  }
   async function createGroup() {
-    const name = window.prompt('Group name'); if (!name?.trim()) return;
-    const names = window.prompt(`Member usernames, separated by commas:\n${contacts.map(person => person.username).join(', ')}`);
-    if (names === null) return;
-    const requested = new Set(names.split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
-    const selected = contacts.filter(person => requested.has(person.username.toLowerCase())).map(person => person.id);
-    if (!selected.length) { setError('Select at least one other member to create a group.'); return; }
-    setBusy(true); try { const conversation = await ChatApi.group(name, selected); await refresh(); setActiveId(conversation.id); } catch (e) { setError(e instanceof Error ? e.message : 'Could not create group.'); } finally { setBusy(false); }
+    const name = groupName.trim();
+    if (!name) { setGroupCreateError('Vui lòng nhập tên nhóm.'); return; }
+    if (!groupMemberIds.length) { setGroupCreateError('Chọn ít nhất một thành viên để tạo nhóm.'); return; }
+    setBusy(true); setGroupCreateError('');
+    try {
+      const conversation = await ChatApi.group(name, groupMemberIds);
+      await refresh();
+      setActiveId(conversation.id);
+      setGroupModalOpen(false);
+      setGroupName('');
+      setGroupQuery('');
+      setGroupMemberIds([]);
+    } catch (e) { setGroupCreateError(e instanceof Error ? e.message : 'Không thể tạo nhóm.'); }
+    finally { setBusy(false); }
   }
   async function sendMessage() {
     const content = draft.trim();
@@ -167,7 +184,7 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
       <aside className="conversation-panel chat-list">
         <header className="panel-heading">
           <div><p className="eyebrow">LAN WORKSPACE</p><h1>Tin nhắn</h1></div>
-          <button className="square-button primary" title="Tạo nhóm mới" onClick={() => void createGroup()} disabled={busy || !contacts.length}>＋</button>
+          <button className="square-button primary" title="Tạo nhóm mới" onClick={() => { setGroupCreateError(''); setGroupModalOpen(true); }} disabled={busy || !contacts.length}>＋</button>
         </header>
         <label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm người hoặc nhóm"/><span className="shortcut">⌘ K</span></label>
         <div className="filter-row"><span className="filter active">Tất cả <span>{conversations.length}</span></span><span className="filter">Nhóm</span></div>
@@ -221,5 +238,54 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
         {rightTab === 'files' ? <section className="shared-files">{sharedFiles.length ? sharedFiles.map(file => <button key={file.id} onClick={() => void downloadFile(file.id, file.name)}><span className="file-icon">{file.name.split('.').pop()?.slice(0, 2).toUpperCase()}</span><span><strong>{file.name}</strong><small>{file.senderName} · {formatFileSize(file.size)}</small></span><span aria-hidden="true">↓</span></button>) : <p className="chat-info-empty">Chưa có tệp được chia sẻ.</p>}</section> : active.type === 'GROUP' ? <div className="detail-section"><div className="section-title"><strong>Thành viên</strong><span>{active.members.length}</span></div>{active.members.map(member => <div className="chat-info-member" key={member.userId}><span className="chat-avatar chat-info-member-avatar">{member.displayName.slice(0, 1).toUpperCase()}</span><span><strong>{member.displayName}</strong><small>{member.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}</small></span>{member.role === 'MEMBER' && active.members.some(item => item.role === 'ADMIN' && item.userId === userId) && <button aria-label={`Xóa ${member.displayName}`} onClick={() => void removePerson(member.userId, member.displayName)}>×</button>}</div>)}{active.members.some(member => member.role === 'ADMIN' && member.userId === userId) && <button className="chat-info-add" onClick={() => void addPeople()}>＋ Thêm thành viên</button>}</div> : <div className="detail-section"><div className="section-title"><strong>Liên hệ</strong></div><p>{activePeer?.displayName}</p><small>@{activePeer?.username}</small></div>}
       </> : <p className="chat-info-empty">Chọn cuộc trò chuyện để xem chi tiết.</p>}</aside>
     </div>
+    {groupModalOpen && <div className="group-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeGroupModal(); }}>
+      <form className="group-modal" role="dialog" aria-modal="true" aria-labelledby="group-modal-title" onSubmit={event => { event.preventDefault(); void createGroup(); }}>
+        <header className="group-modal-header">
+          <span className="group-modal-icon" aria-hidden="true">♧</span>
+          <span className="group-modal-heading"><strong id="group-modal-title">Tạo nhóm mới</strong><small>Kết nối và chia sẻ trong mạng LAN</small></span>
+          <button type="button" className="group-modal-close" aria-label="Đóng" onClick={closeGroupModal} disabled={busy}>×</button>
+        </header>
+        <div className="group-modal-content">
+          <label className="group-field-label" htmlFor="group-name">Tên nhóm</label>
+          <input id="group-name" className="group-name-input" value={groupName} onChange={event => { setGroupName(event.target.value); setGroupCreateError(''); }} maxLength={100} placeholder="Ví dụ: Nhóm dự án LAN-Media" autoFocus />
+          <div className="group-members-heading">
+            <span><strong>Thêm thành viên</strong><small>Đã chọn {groupMemberIds.length} người</small></span>
+            <span className="group-selection-count">{groupMemberIds.length}/{contacts.length}</span>
+          </div>
+          <label className="group-search">
+            <span aria-hidden="true">⌕</span>
+            <input value={groupQuery} onChange={event => setGroupQuery(event.target.value)} placeholder="Tìm theo tên hoặc tài khoản..." aria-label="Tìm thành viên" />
+          </label>
+          <div className="group-contact-list" aria-label="Danh sách thành viên">
+            {contacts.filter(person => `${person.displayName} ${person.username}`.toLocaleLowerCase().includes(groupQuery.trim().toLocaleLowerCase())).map(person => {
+              const selected = groupMemberIds.includes(person.id);
+              return <button type="button" key={person.id} className={`group-contact${selected ? ' is-selected' : ''}`} onClick={() => {
+                setGroupMemberIds(current => selected ? current.filter(id => id !== person.id) : [...current, person.id]);
+                setGroupCreateError('');
+              }} aria-pressed={selected}>
+                <span className={`group-contact-avatar avatar-${paletteColor(person.id)}`}>{person.displayName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</span>
+                <span className="group-contact-copy"><strong>{person.displayName}</strong><small>@{person.username} · {online.has(person.id) ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></span>
+                <span className={`group-contact-check${selected ? ' is-checked' : ''}`} aria-hidden="true">{selected ? '✓' : ''}</span>
+              </button>;
+            })}
+            {!contacts.some(person => `${person.displayName} ${person.username}`.toLocaleLowerCase().includes(groupQuery.trim().toLocaleLowerCase())) && <p className="group-contact-empty">Không tìm thấy thành viên phù hợp.</p>}
+          </div>
+          {groupCreateError && <p className="group-modal-error" role="alert">{groupCreateError}</p>}
+        </div>
+        <footer className="group-modal-footer">
+          <div className="group-selected-avatars" aria-label={`${groupMemberIds.length} thành viên đã chọn`}>
+            {groupMemberIds.slice(0, 5).map(id => {
+              const person = contacts.find(item => item.id === id);
+              return person ? <span key={id} className={`group-selected-avatar avatar-${paletteColor(id)}`} title={person.displayName}>{person.displayName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</span> : null;
+            })}
+            {groupMemberIds.length > 5 && <span className="group-selected-more">+{groupMemberIds.length - 5}</span>}
+          </div>
+          <div className="group-modal-actions">
+            <button type="button" className="group-cancel-button" onClick={closeGroupModal} disabled={busy}>Hủy</button>
+            <button type="submit" className="group-create-button" disabled={busy || !groupName.trim() || !groupMemberIds.length}>{busy ? 'Đang tạo…' : 'Tạo nhóm'}</button>
+          </div>
+        </footer>
+      </form>
+    </div>}
   </div>;
 }
