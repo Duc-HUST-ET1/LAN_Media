@@ -540,3 +540,260 @@ button { cursor: pointer; }
   .file-message { min-width: 220px; }
   .security-note { font-size: 8px; }
 }
+
+.demo-app-shell[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e2e8f0;
+  background: #111827;
+}
+
+.demo-app-shell[data-theme="dark"] .conversation-panel,
+.demo-app-shell[data-theme="dark"] .detail-panel,
+.demo-app-shell[data-theme="dark"] .chat-info,
+.demo-app-shell[data-theme="dark"] .chat-header,
+.demo-app-shell[data-theme="dark"] .chat-panel-head,
+.demo-app-shell[data-theme="dark"] .chat-list,
+.demo-app-shell[data-theme="dark"] .chat-compose,
+.demo-app-shell[data-theme="dark"] .chat-members,
+.demo-app-shell[data-theme="dark"] .chat-upload-status,
+.demo-app-shell[data-theme="dark"] .full-sidebar,
+.demo-app-shell[data-theme="dark"] .full-main,
+.demo-app-shell[data-theme="dark"] .profile-page,
+.demo-app-shell[data-theme="dark"] .profile-page-header,
+.demo-app-shell[data-theme="dark"] .settings-toggles,
+.demo-app-shell[data-theme="dark"] .files-list-view,
+.demo-app-shell[data-theme="dark"] .file-card,
+.demo-app-shell[data-theme="dark"] .calls-stat,
+.demo-app-shell[data-theme="dark"] .call-contact-row,
+.demo-app-shell[data-theme="dark"] .contact-card,
+.demo-app-shell[data-theme="dark"] .chat-message,
+.demo-app-shell[data-theme="dark"] .chat-file-card,
+.demo-app-shell[data-theme="dark"] .file-message,
+.demo-app-shell[data-theme="dark"] .account-menu {
+  background-color: #1e293b;
+}
+
+.demo-app-shell[data-theme="dark"] .demo-app-shell,
+.demo-app-shell[data-theme="dark"] .chat-panel,
+.demo-app-shell[data-theme="dark"] .chat-info-section,
+.demo-app-shell[data-theme="dark"] .chat-info-profile,
+.demo-app-shell[data-theme="dark"] .settings-avatar-block,
+.demo-app-shell[data-theme="dark"] .dnd-block,
+.demo-app-shell[data-theme="dark"] .network-status-card,
+.demo-app-shell[data-theme="dark"] .security-status-card,
+.demo-app-shell[data-theme="dark"] .network-card,
+.demo-app-shell[data-theme="dark"] .files-list-header,
+.demo-app-shell[data-theme="dark"] .files-list-row:hover,
+.demo-app-shell[data-theme="dark"] .contact-row:hover,
+.demo-app-shell[data-theme="dark"] .call-row:hover,
+.demo-app-shell[data-theme="dark"] .conversation:hover,
+.demo-app-shell[data-theme="dark"] .settings-nav-item:hover,
+.demo-app-shell[data-theme="dark"] .files-nav-item:hover {
+  background-color: #172033;
+}
+
+.demo-app-shell[data-theme="dark"] .search-box,
+.demo-app-shell[data-theme="dark"] .chat-compose input,
+.demo-app-shell[data-theme="dark"] .chat-pending-attachment,
+.demo-app-shell[data-theme="dark"] .chat-pending-attachment > span:first-child,
+.demo-app-shell[data-theme="dark"] .device-icon-wrap,
+.demo-app-shell[data-theme="dark"] .quick-actions span,
+.demo-app-shell[data-theme="dark"] .security-note,
+.demo-app-shell[data-theme="dark"] .stat-chip,
+.demo-app-shell[data-theme="dark"] .settings-general-symbol,
+.demo-app-shell[data-theme="dark"] .files-nav-item.active,
+.demo-app-shell[data-theme="dark"] .settings-nav-item.active,
+.demo-app-shell[data-theme="dark"] .chat-list-item.is-active,
+.demo-app-shell[data-theme="dark"] .chat-info-tabs button.is-active,
+.demo-app-shell[data-theme="dark"] .chat-members span {
+  background-color: #273449;
+}
+
+.demo-app-shell[data-theme="dark"] .conversation-panel,
+.demo-app-shell[data-theme="dark"] .detail-panel,
+.demo-app-shell[data-theme="dark"] .chat-header,
+.demo-app-shell[data-theme="dark"] .chat-info,
+.demo-app-shell[data-theme="dark"] .chat-panel-head,
+.demo-app-shell[data-theme="dark"] .chat-list,
+.demo-app-shell[data-theme="dark"] .chat-compose,
+.demo-app-shell[data-theme="dark"] .chat-members,
+.demo-app-shell[data-theme="dark"] .chat-upload-status,
+.demo-app-shell[data-theme="dark"] .chat-info-profile,
+.demo-app-shell[data-theme="dark"] .chat-info-section,
+.demo-app-shell[data-theme="dark"] .chat-info-tabs,
+.demo-app-shell[data-theme="dark"] .full-sidebar,
+.demo-app-shell[data-theme="dark"] .settings-profile-mini,
+.demo-app-shell[data-theme="dark"] .settings-version,
+.demo-app-shell[data-theme="dark"] .contact-meta,
+.demo-app-shell[data-theme="dark"] .files-storage,
+.demo-app-shell[data-theme="dark"] .files-nav,
+.demo-app-shell[data-theme="dark"] .files-list-view,
+.demo-app-shell[data-theme="dark"] .files-list-header,
+.demo-app-shell[data-theme="dark"] .files-list-row,
+.demo-app-shell[data-theme="dark"] .chat-layout,
+.demo-app-shell[data-theme="dark"] .chat-message,
+.demo-app-shell[data-theme="dark"] .chat-file-card,
+.demo-app-shell[data-theme="dark"] .file-message,
+.demo-app-shell[data-theme="dark"] .settings-general-card,
+.demo-app-shell[data-theme="dark"] .settings-toggles,
+.demo-app-shell[data-theme="dark"] .toggle-row,
+.demo-app-shell[data-theme="dark"] .settings-field input,
+.demo-app-shell[data-theme="dark"] .settings-field select,
+.demo-app-shell[data-theme="dark"] .contact-card,
+.demo-app-shell[data-theme="dark"] .calls-stat,
+.demo-app-shell[data-theme="dark"] .call-contact-row,
+.demo-app-shell[data-theme="dark"] .font-size-btn,
+.demo-app-shell[data-theme="dark"] .settings-upload-btn {
+  border-color: #334155;
+}
+
+.demo-app-shell[data-theme="dark"] .chat-info-section,
+.demo-app-shell[data-theme="dark"] .chat-info-profile,
+.demo-app-shell[data-theme="dark"] .chat-members,
+.demo-app-shell[data-theme="dark"] .chat-compose,
+.demo-app-shell[data-theme="dark"] .chat-upload-status,
+.demo-app-shell[data-theme="dark"] .chat-panel-head,
+.demo-app-shell[data-theme="dark"] .chat-list,
+.demo-app-shell[data-theme="dark"] .chat-info-tabs {
+  border-color: #334155;
+}
+
+.demo-app-shell[data-theme="dark"] .panel-heading h1,
+.demo-app-shell[data-theme="dark"] .conversation-top strong,
+.demo-app-shell[data-theme="dark"] .profile strong,
+.demo-app-shell[data-theme="dark"] .detail-top h2,
+.demo-app-shell[data-theme="dark"] .section-title strong,
+.demo-app-shell[data-theme="dark"] .shared-files strong,
+.demo-app-shell[data-theme="dark"] .full-main h1,
+.demo-app-shell[data-theme="dark"] .contacts-hero h2,
+.demo-app-shell[data-theme="dark"] .contact-info strong,
+.demo-app-shell[data-theme="dark"] .contact-card > strong,
+.demo-app-shell[data-theme="dark"] .files-main-title,
+.demo-app-shell[data-theme="dark"] .files-list-name strong,
+.demo-app-shell[data-theme="dark"] .file-card > strong,
+.demo-app-shell[data-theme="dark"] .call-info strong,
+.demo-app-shell[data-theme="dark"] .call-time-col span,
+.demo-app-shell[data-theme="dark"] .calls-stat-value,
+.demo-app-shell[data-theme="dark"] .calls-new-section h3,
+.demo-app-shell[data-theme="dark"] .settings-profile-mini strong,
+.demo-app-shell[data-theme="dark"] .settings-section h2,
+.demo-app-shell[data-theme="dark"] .settings-general-card strong,
+.demo-app-shell[data-theme="dark"] .toggle-row > div strong,
+.demo-app-shell[data-theme="dark"] .settings-field label,
+.demo-app-shell[data-theme="dark"] .network-status-card strong,
+.demo-app-shell[data-theme="dark"] .security-status-card strong,
+.demo-app-shell[data-theme="dark"] .chat-panel-head strong,
+.demo-app-shell[data-theme="dark"] .chat-list-item,
+.demo-app-shell[data-theme="dark"] .chat-list-copy strong,
+.demo-app-shell[data-theme="dark"] .chat-info-profile > strong,
+.demo-app-shell[data-theme="dark"] .chat-info-section-head strong,
+.demo-app-shell[data-theme="dark"] .chat-info-section > p,
+.demo-app-shell[data-theme="dark"] .chat-info-member > span:nth-child(2) strong,
+.demo-app-shell[data-theme="dark"] .chat-message p,
+.demo-app-shell[data-theme="dark"] .chat-file-details strong,
+.demo-app-shell[data-theme="dark"] .chat-upload-status strong,
+.demo-app-shell[data-theme="dark"] .chat-pending-attachment strong,
+.demo-app-shell[data-theme="dark"] .profile-page-header h1,
+.demo-app-shell[data-theme="dark"] .profile-display-name,
+.demo-app-shell[data-theme="dark"] .network-card strong,
+.demo-app-shell[data-theme="dark"] .file-message strong {
+  color: #e2e8f0;
+}
+
+.demo-app-shell[data-theme="dark"] .conversation-top time,
+.demo-app-shell[data-theme="dark"] .conversation-preview,
+.demo-app-shell[data-theme="dark"] .empty-state,
+.demo-app-shell[data-theme="dark"] .detail-top p,
+.demo-app-shell[data-theme="dark"] .shared-files small,
+.demo-app-shell[data-theme="dark"] .view-profile,
+.demo-app-shell[data-theme="dark"] .contacts-hero p,
+.demo-app-shell[data-theme="dark"] .contact-info span,
+.demo-app-shell[data-theme="dark"] .contact-role,
+.demo-app-shell[data-theme="dark"] .contact-meta span,
+.demo-app-shell[data-theme="dark"] .files-count,
+.demo-app-shell[data-theme="dark"] .files-user-name,
+.demo-app-shell[data-theme="dark"] .files-user-count,
+.demo-app-shell[data-theme="dark"] .files-meta-cell,
+.demo-app-shell[data-theme="dark"] .file-card > span,
+.demo-app-shell[data-theme="dark"] .call-type,
+.demo-app-shell[data-theme="dark"] .call-date,
+.demo-app-shell[data-theme="dark"] .call-contact-row > div span,
+.demo-app-shell[data-theme="dark"] .settings-profile-mini span,
+.demo-app-shell[data-theme="dark"] .settings-general-card,
+.demo-app-shell[data-theme="dark"] .settings-general-card small,
+.demo-app-shell[data-theme="dark"] .settings-subsection,
+.demo-app-shell[data-theme="dark"] .toggle-row > div span,
+.demo-app-shell[data-theme="dark"] .settings-field input,
+.demo-app-shell[data-theme="dark"] .settings-field select,
+.demo-app-shell[data-theme="dark"] .settings-avatar-block > div p,
+.demo-app-shell[data-theme="dark"] .chat-section-title,
+.demo-app-shell[data-theme="dark"] .chat-list-copy small,
+.demo-app-shell[data-theme="dark"] .chat-panel-head small,
+.demo-app-shell[data-theme="dark"] .chat-info-profile > small,
+.demo-app-shell[data-theme="dark"] .chat-info-presence,
+.demo-app-shell[data-theme="dark"] .chat-info-section-head > span,
+.demo-app-shell[data-theme="dark"] .chat-info-section > small,
+.demo-app-shell[data-theme="dark"] .chat-info-member > span:nth-child(2) small,
+.demo-app-shell[data-theme="dark"] .chat-info-empty,
+.demo-app-shell[data-theme="dark"] .chat-file-details small,
+.demo-app-shell[data-theme="dark"] .chat-upload-status small,
+.demo-app-shell[data-theme="dark"] .chat-pending-attachment small,
+.demo-app-shell[data-theme="dark"] .chat-typing,
+.demo-app-shell[data-theme="dark"] .chat-message-meta time,
+.demo-app-shell[data-theme="dark"] .chat-message-meta strong,
+.demo-app-shell[data-theme="dark"] .profile-username,
+.demo-app-shell[data-theme="dark"] .profile-note,
+.demo-app-shell[data-theme="dark"] .network-status-card p,
+.demo-app-shell[data-theme="dark"] .security-status-card p,
+.demo-app-shell[data-theme="dark"] .network-card,
+.demo-app-shell[data-theme="dark"] .file-message small {
+  color: #a5b4c7;
+}
+
+.demo-app-shell[data-theme="dark"] .search-box,
+.demo-app-shell[data-theme="dark"] .search-box input,
+.demo-app-shell[data-theme="dark"] .chat-compose input,
+.demo-app-shell[data-theme="dark"] .settings-field input,
+.demo-app-shell[data-theme="dark"] .settings-field select {
+  color: #e2e8f0;
+}
+
+.demo-app-shell[data-theme="dark"] .search-box input::placeholder,
+.demo-app-shell[data-theme="dark"] .chat-compose input::placeholder {
+  color: #94a3b8;
+}
+
+.demo-app-shell[data-theme="dark"] .settings-general-card:hover,
+.demo-app-shell[data-theme="dark"] .conversation.active,
+.demo-app-shell[data-theme="dark"] .chat-list-item:hover,
+.demo-app-shell[data-theme="dark"] .chat-quiet-button:hover {
+  background-color: #273449;
+}
+
+.demo-app-shell[data-theme="dark"] .chat-new-group,
+.demo-app-shell[data-theme="dark"] .chat-quiet-button,
+.demo-app-shell[data-theme="dark"] .chat-info-add,
+.demo-app-shell[data-theme="dark"] .chat-file-download,
+.demo-app-shell[data-theme="dark"] .chat-attach-button,
+.demo-app-shell[data-theme="dark"] .contact-card-actions button,
+.demo-app-shell[data-theme="dark"] .view-toggle,
+.demo-app-shell[data-theme="dark"] .file-card-actions button,
+.demo-app-shell[data-theme="dark"] .settings-upload-btn,
+.demo-app-shell[data-theme="dark"] .font-size-btn {
+  color: #cbd5e1;
+  background-color: #1e293b;
+  border-color: #475569;
+}
+
+.demo-app-shell[data-theme="dark"] .toggle-row {
+  border-bottom-color: #334155;
+}
+
+.demo-app-shell[data-theme="dark"] .call-contact-row,
+.demo-app-shell[data-theme="dark"] .calls-stat,
+.demo-app-shell[data-theme="dark"] .chat-info,
+.demo-app-shell[data-theme="dark"] .chat-panel,
+.demo-app-shell[data-theme="dark"] .chat-list,
+.demo-app-shell[data-theme="dark"] .files-list-row {
+  border-color: #334155;
+}

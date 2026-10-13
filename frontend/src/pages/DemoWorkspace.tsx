@@ -153,11 +153,14 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   const [notifCall, setNotifCall] = useState(true);
   const [notifFile, setNotifFile] = useState(false);
   const [notifSound, setNotifSound] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("lan-media.theme") === "dark");
   const [compactMode, setCompactMode] = useState(false);
   const [contactQuery, setContactQuery] = useState("");
 
   useEffect(() => { setActiveTab(initialTab); }, [initialTab]);
+  useEffect(() => {
+    localStorage.setItem("lan-media.theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   useEffect(() => {
     if (!accountMenuOpen) return;
@@ -288,7 +291,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   ];
 
   return (
-    <main className={`demo-app-shell${activeTab === "message" ? " demo-app-shell--chat app-shell--chat" : ""}`}>
+    <main className={`demo-app-shell${activeTab === "message" ? " demo-app-shell--chat app-shell--chat" : ""}`} data-theme={darkMode ? "dark" : "light"}>
       {(notice || dataError) && <div className="toast" role={dataError ? "alert" : "status"}>{notice || dataError}</div>}
 
       {/* Rail */}
@@ -693,7 +696,14 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
                       <strong>Chế độ tối</strong>
                       <span>Sử dụng nền tối cho toàn bộ ứng dụng</span>
                     </div>
-                    <button className={`toggle-switch ${darkMode ? "on" : ""}`} onClick={() => { setDarkMode(!darkMode); showNotice("Tính năng đang phát triển"); }}>
+                    <button
+                      className={`toggle-switch ${darkMode ? "on" : ""}`}
+                      type="button"
+                      role="switch"
+                      aria-checked={darkMode}
+                      aria-label="Chế độ tối"
+                      onClick={() => setDarkMode((enabled) => !enabled)}
+                    >
                       <span className="toggle-knob" />
                     </button>
                   </div>
