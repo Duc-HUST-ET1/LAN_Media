@@ -247,7 +247,10 @@ button { cursor: pointer; }
 .shared-files .file-icon { width: 32px; height: 32px; }
 .view-profile { width: calc(100% - 40px); margin: 14px 20px; padding: 10px 0; display: flex; align-items: center; justify-content: space-between; border: 0; color: #637086; background: transparent; font-size: 9px; font-weight: 650; }
 
-.toast { position: fixed; z-index: 20; top: 20px; left: 50%; padding: 11px 18px; border-radius: 10px; color: white; background: #172234; box-shadow: 0 12px 30px #17223435; font-size: 11px; transform: translateX(-50%); animation: toast-in .25s ease-out; }
+.toast { position: fixed; z-index: 20; top: 20px; left: 50%; display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 18px; border-radius: 10px; color: white; background: #172234; box-shadow: 0 12px 30px #17223435; font-size: 11px; transform: translateX(-50%); animation: toast-in .25s ease-out; }
+.toast span { flex: 1; }
+.toast button { display: grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; border-radius: 7px; color: inherit; background: transparent; font-size: 19px; line-height: 1; }
+.toast button:hover { background: #ffffff20; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -8px); } }
 
 /* ── Full-panel layout (non-chat tabs) ──────────────────────────────── */

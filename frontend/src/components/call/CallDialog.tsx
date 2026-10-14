@@ -41,7 +41,7 @@ export default function CallDialog({ call, contacts }: { call: CallController; c
   useEffect(() => { if (call.remote && remoteVideo.current) remoteVideo.current.srcObject = call.remote; }, [call.remote]);
   useEffect(() => { if (call.remote && remoteAudio.current) remoteAudio.current.srcObject = call.remote; }, [call.remote]);
 
-  if (!call.call) return call.error ? <div className="call-toast" role="alert">{call.error}</div> : null;
+  if (!call.call) return call.error ? <div className="call-toast" role="alert"><span>{call.error}</span><button type="button" onClick={call.dismissError} aria-label="Đóng thông báo">×</button></div> : null;
 
   const active = call.call;
   const peerName = contacts.find((item) => item.id === active.peerId)?.displayName ?? active.peerName;

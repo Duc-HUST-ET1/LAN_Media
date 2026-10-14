@@ -60,11 +60,16 @@ export function useCall() {
     if (event.type === 'call_rejected' || event.type === 'call_ended') { cleanup(); update(null); if (event.type === 'call_rejected') setError('The call was rejected.'); }
   }), [cleanup, end, startPeer]);
   useEffect(() => realtimeClient.onStatus(status => { if (status === 'disconnected' && callRef.current) { setError('Realtime connection was lost.'); cleanup(); update(null); } }), [cleanup]);
+  useEffect(() => {
+    if (!error) return;
+    const timer = window.setTimeout(() => setError(''), 10_000);
+    return () => window.clearTimeout(timer);
+  }, [error]);
   useEffect(() => { if (!call?.connectedAt) { setDuration(0); return; } const tick = () => setDuration(Math.floor((Date.now() - (call.connectedAt ?? Date.now())) / 1000)); tick(); const timer = window.setInterval(tick, 1000); return () => window.clearInterval(timer); }, [call?.connectedAt]);
   const start = useCallback(async (peerId: string, peerName: string, type: CallType) => { setError(''); update({ callId: '', peerId, peerName, type, phase: 'Calling...', incoming: false }); if (!realtimeClient.send({ type: 'call_user', payload: { targetId: peerId, callType: type } })) { update(null); setError('Realtime connection is unavailable.'); } }, []);
   const accept = useCallback(async () => { const active = callRef.current; if (!active) return; try { await getMedia(active.type); if (!realtimeClient.send({ type: 'call_accept', payload: { callId: active.callId } })) throw new Error('Realtime connection is unavailable.'); update({ ...active, incoming: false, phase: 'Connecting...' }); } catch (e) { setError(e instanceof Error ? e.message : 'Could not access microphone or camera.'); realtimeClient.send({ type: 'call_reject', payload: { callId: active.callId } }); cleanup(); update(null); } }, [cleanup, getMedia]);
   const toggleMute = () => { const next = !muted; stream.current?.getAudioTracks().forEach(track => { track.enabled = !next; }); setMuted(next); };
   const toggleCamera = () => { const next = !cameraOff; stream.current?.getVideoTracks().forEach(track => { track.enabled = !next; }); setCameraOff(next); };
-  return { call, local, remote, muted, cameraOff, error, duration, start, accept, reject: () => end(true), end, toggleMute, toggleCamera };
+  return { call, local, remote, muted, cameraOff, error, duration, start, accept, reject: () => end(true), end, dismissError: () => setError(''), toggleMute, toggleCamera };
 }
 export type CallController = ReturnType<typeof useCall>;

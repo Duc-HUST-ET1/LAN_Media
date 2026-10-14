@@ -11,7 +11,7 @@ function paletteColor(value: string) {
   for (const character of value) hash = (hash * 31 + character.charCodeAt(0)) | 0;
   return avatarPalette[Math.abs(hash) % avatarPalette.length];
 }
-export default function ChatPage({ userId, call }: { userId: string; call: CallController }) {
+export default function ChatPage({ userId, call, initialConversationId = null }: { userId: string; call: CallController; initialConversationId?: string | null }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [contacts, setContacts] = useState<Awaited<ReturnType<typeof ChatApi.contacts>>>([]);
   const [online, setOnline] = useState<Set<string>>(new Set());
@@ -33,6 +33,10 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
   const [groupQuery, setGroupQuery] = useState('');
   const [groupMemberIds, setGroupMemberIds] = useState<string[]>([]);
   const [groupCreateError, setGroupCreateError] = useState('');
+  const [addMembersModalOpen, setAddMembersModalOpen] = useState(false);
+  const [addMembersQuery, setAddMembersQuery] = useState('');
+  const [addMemberIds, setAddMemberIds] = useState<string[]>([]);
+  const [addMembersError, setAddMembersError] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
@@ -59,9 +63,11 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
     try {
       const [cs, people, onlinePeople] = await Promise.all([ChatApi.conversations(), ChatApi.contacts(), ChatApi.online()]);
       setConversations(cs); setContacts(people); setOnline(new Set(onlinePeople.map(person => person.id)));
-      setActiveId(current => current && cs.some(item => item.id === current) ? current : cs[0]?.id ?? null); setError('');
+      setActiveId(current => initialConversationId && cs.some(item => item.id === initialConversationId)
+        ? initialConversationId
+        : current && cs.some(item => item.id === current) ? current : cs[0]?.id ?? null); setError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load conversations.'); }
-  }, []);
+  }, [initialConversationId]);
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     setSelectedFile(null); setUploadState(null); setError(''); setSharedFiles([]);
@@ -104,6 +110,11 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
     if (busy) return;
     setGroupModalOpen(false);
     setGroupCreateError('');
+  }
+  function closeAddMembersModal() {
+    if (busy) return;
+    setAddMembersModalOpen(false);
+    setAddMembersError('');
   }
   async function createGroup() {
     const name = groupName.trim();
@@ -167,13 +178,25 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
     }
   }
   async function addPeople() {
-    if (!active) return;
-    const candidates = contacts.filter(person => !active.members.some(member => member.userId === person.id));
-    const names = window.prompt(`Member usernames, separated by commas:\n${candidates.map(person => person.username).join(', ')}`);
-    if (names === null) return;
-    const requested = new Set(names.split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
-    const ids = candidates.filter(person => requested.has(person.username.toLowerCase())).map(person => person.id); if (!ids.length) return;
-    try { const updated = await ChatApi.addMembers(active.id, ids); setConversations(old => old.map(item => item.id === updated.id ? updated : item)); } catch (e) { setError(e instanceof Error ? e.message : 'Could not add members.'); }
+    if (!active || active.type !== 'GROUP') return;
+    setAddMembersQuery('');
+    setAddMemberIds([]);
+    setAddMembersError('');
+    setAddMembersModalOpen(true);
+  }
+  async function addSelectedMembers() {
+    if (!active || active.type !== 'GROUP') return;
+    const memberIds = addMemberIds.filter(id => !active.members.some(member => member.userId === id));
+    if (!memberIds.length) { setAddMembersError('Chọn ít nhất một thành viên mới.'); return; }
+    setBusy(true); setAddMembersError('');
+    try {
+      const updated = await ChatApi.addMembers(active.id, memberIds);
+      setConversations(old => old.map(item => item.id === updated.id ? updated : item));
+      setAddMembersModalOpen(false);
+      setAddMembersQuery('');
+      setAddMemberIds([]);
+    } catch (e) { setAddMembersError(e instanceof Error ? e.message : 'Không thể thêm thành viên.'); }
+    finally { setBusy(false); }
   }
   async function removePerson(id: string, name: string) {
     if (!active || !window.confirm(`Remove ${name} from this group?`)) return;
@@ -283,6 +306,55 @@ export default function ChatPage({ userId, call }: { userId: string; call: CallC
           <div className="group-modal-actions">
             <button type="button" className="group-cancel-button" onClick={closeGroupModal} disabled={busy}>Hủy</button>
             <button type="submit" className="group-create-button" disabled={busy || !groupName.trim() || !groupMemberIds.length}>{busy ? 'Đang tạo…' : 'Tạo nhóm'}</button>
+          </div>
+        </footer>
+      </form>
+    </div>}
+    {addMembersModalOpen && active?.type === 'GROUP' && <div className="group-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeAddMembersModal(); }}>
+      <form className="group-modal" role="dialog" aria-modal="true" aria-labelledby="add-members-modal-title" onSubmit={event => { event.preventDefault(); void addSelectedMembers(); }}>
+        <header className="group-modal-header">
+          <span className="group-modal-icon" aria-hidden="true">♧</span>
+          <span className="group-modal-heading"><strong id="add-members-modal-title">Thêm thành viên</strong><small>Chọn người để thêm vào {active.name ?? 'nhóm này'}</small></span>
+          <button type="button" className="group-modal-close" aria-label="Đóng" onClick={closeAddMembersModal} disabled={busy}>×</button>
+        </header>
+        <div className="group-modal-content">
+          <div className="group-members-heading">
+            <span><strong>Danh bạ</strong><small>Đã chọn {addMemberIds.length} người</small></span>
+            <span className="group-selection-count">{addMemberIds.length}/{contacts.filter(person => !active.members.some(member => member.userId === person.id)).length}</span>
+          </div>
+          <label className="group-search">
+            <span aria-hidden="true">⌕</span>
+            <input value={addMembersQuery} onChange={event => setAddMembersQuery(event.target.value)} placeholder="Tìm theo tên hoặc tài khoản..." aria-label="Tìm thành viên cần thêm" autoFocus />
+          </label>
+          <div className="group-contact-list" aria-label="Danh sách thành viên chưa có trong nhóm">
+            {contacts.filter(person => !active.members.some(member => member.userId === person.id)
+              && `${person.displayName} ${person.username}`.toLocaleLowerCase().includes(addMembersQuery.trim().toLocaleLowerCase())).map(person => {
+              const selected = addMemberIds.includes(person.id);
+              return <button type="button" key={person.id} className={`group-contact${selected ? ' is-selected' : ''}`} onClick={() => {
+                setAddMemberIds(current => selected ? current.filter(id => id !== person.id) : [...current, person.id]);
+                setAddMembersError('');
+              }} aria-pressed={selected}>
+                <span className={`group-contact-avatar avatar-${paletteColor(person.id)}`}>{person.displayName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</span>
+                <span className="group-contact-copy"><strong>{person.displayName}</strong><small>@{person.username} · {online.has(person.id) ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></span>
+                <span className={`group-contact-check${selected ? ' is-checked' : ''}`} aria-hidden="true">{selected ? '✓' : ''}</span>
+              </button>;
+            })}
+            {!contacts.some(person => !active.members.some(member => member.userId === person.id)
+              && `${person.displayName} ${person.username}`.toLocaleLowerCase().includes(addMembersQuery.trim().toLocaleLowerCase())) && <p className="group-contact-empty">Không còn thành viên phù hợp để thêm.</p>}
+          </div>
+          {addMembersError && <p className="group-modal-error" role="alert">{addMembersError}</p>}
+        </div>
+        <footer className="group-modal-footer">
+          <div className="group-selected-avatars" aria-label={`${addMemberIds.length} thành viên đã chọn`}>
+            {addMemberIds.slice(0, 5).map(id => {
+              const person = contacts.find(item => item.id === id);
+              return person ? <span key={id} className={`group-selected-avatar avatar-${paletteColor(id)}`} title={person.displayName}>{person.displayName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</span> : null;
+            })}
+            {addMemberIds.length > 5 && <span className="group-selected-more">+{addMemberIds.length - 5}</span>}
+          </div>
+          <div className="group-modal-actions">
+            <button type="button" className="group-cancel-button" onClick={closeAddMembersModal} disabled={busy}>Hủy</button>
+            <button type="submit" className="group-create-button" disabled={busy || !addMemberIds.length}>{busy ? 'Đang thêm…' : 'Thêm thành viên'}</button>
           </div>
         </footer>
       </form>

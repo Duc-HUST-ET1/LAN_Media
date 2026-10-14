@@ -500,6 +500,9 @@
   z-index: 21;
   right: 20px;
   bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   max-width: 360px;
   padding: 12px 16px;
   border: 1px solid #f0d3d7;
@@ -508,6 +511,27 @@
   background: #fff5f6;
   box-shadow: 0 8px 24px rgba(32, 48, 75, 0.18);
   font-size: 12px;
+}
+
+.call-toast span {
+  flex: 1;
+}
+
+.call-toast button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.call-toast button:hover {
+  background: #f8e4e7;
 }
 
 .call-overlay.is-video .call-header {

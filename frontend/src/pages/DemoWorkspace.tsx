@@ -141,10 +141,12 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   const [people, setPeople] = useState<AuthUser[]>([]);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [chatConversationId, setChatConversationId] = useState<string | null>(null);
   const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([]);
   const [dataError, setDataError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState("");
+  const noticeTimer = useRef<number | undefined>(undefined);
   const [fileFilter, setFileFilter] = useState<"all" | "docs" | "media" | "design">("all");
   const [fileView, setFileView] = useState<"grid" | "list">("list");
   const [callFilter, setCallFilter] = useState<"all" | "missed">("all");
@@ -158,6 +160,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   const [contactQuery, setContactQuery] = useState("");
 
   useEffect(() => { setActiveTab(initialTab); }, [initialTab]);
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
   useEffect(() => {
     localStorage.setItem("lan-media.theme", darkMode ? "dark" : "light");
   }, [darkMode]);
@@ -250,8 +253,13 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
     [callFilter],
   );
   function showNotice(text: string) {
+    window.clearTimeout(noticeTimer.current);
     setNotice(text);
-    window.setTimeout(() => setNotice(""), 2600);
+    noticeTimer.current = window.setTimeout(() => setNotice(""), 10_000);
+  }
+  function dismissNotice() {
+    window.clearTimeout(noticeTimer.current);
+    setNotice("");
   }
 
   async function uploadCloudFile(file?: File) {
@@ -282,6 +290,15 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
     } catch (cause) { showNotice(cause instanceof Error ? cause.message : "Không thể bắt đầu cuộc gọi."); }
   }
 
+  async function openContactChat(contact: Contact) {
+    try {
+      const conversation = await ChatApi.direct(contact.id);
+      setChatConversationId(conversation.id);
+      setActiveTab("message");
+      onOpenChat();
+    } catch (cause) { showNotice(cause instanceof Error ? cause.message : "Không thể mở cuộc trò chuyện."); }
+  }
+
   const navItems: { id: TabId; icon: IconName; label: string }[] = [
     { id: "message", icon: "message", label: "Tin nhắn" },
     { id: "users", icon: "users", label: "Danh bạ" },
@@ -291,7 +308,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
 
   return (
     <main className={`demo-app-shell${activeTab === "message" ? " demo-app-shell--chat app-shell--chat" : ""}`} data-theme={darkMode ? "dark" : "light"}>
-      {(notice || dataError) && <div className="toast" role={dataError ? "alert" : "status"}>{notice || dataError}</div>}
+      {(notice || dataError) && <div className="toast" role={dataError ? "alert" : "status"}><span>{notice || dataError}</span>{notice && <button type="button" onClick={dismissNotice} aria-label="Đóng thông báo">×</button>}</div>}
 
       {/* Rail */}
       <aside className="rail">
@@ -334,7 +351,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
       </aside>
 
       {/* ── Message Tab ──────────────────────────────────────────────────── */}
-      {activeTab === "message" && <div className="live-chat-area"><ChatPage userId={user.id} call={call} /></div>}
+      {activeTab === "message" && <div className="live-chat-area"><ChatPage userId={user.id} call={call} initialConversationId={chatConversationId} /></div>}
       {activeTab === "profile" && <ProfilePage user={user} onChangeAvatar={() => showNotice("Chọn ảnh đại diện...")} />}
       
 
@@ -366,7 +383,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
                     <span>{c.role}</span>
                   </div>
                   <div className="contact-actions">
-                    <button className="icon-button" onClick={async () => { try { await ChatApi.direct(c.id); onOpenChat(); } catch (cause) { showNotice(cause instanceof Error ? cause.message : "Không thể mở cuộc trò chuyện."); } }} title="Nhắn tin"><Icon name="message" size={17} /></button>
+                    <button className="icon-button" onClick={() => void openContactChat(c)} title="Nhắn tin"><Icon name="message" size={17} /></button>
                     <button className="icon-button" onClick={() => void startCall(c, "voice")} title="Gọi thoại"><Icon name="call" size={17} /></button>
                   </div>
                 </div>
@@ -396,7 +413,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
                     <span>{c.role}</span>
                   </div>
                   <div className="contact-card-actions">
-                    <button onClick={async () => { try { await ChatApi.direct(c.id); onOpenChat(); } catch (cause) { showNotice(cause instanceof Error ? cause.message : "Không thể mở cuộc trò chuyện."); } }}><Icon name="message" size={15} />Nhắn tin</button>
+                    <button onClick={() => void openContactChat(c)}><Icon name="message" size={15} />Nhắn tin</button>
                     <button onClick={() => void startCall(c, "voice")}><Icon name="call" size={15} />Gọi</button>
                   </div>
                 </div>
