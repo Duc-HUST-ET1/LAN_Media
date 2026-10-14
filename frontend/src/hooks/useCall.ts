@@ -40,6 +40,7 @@ export function useCall() {
     if (!active) return;
     if (event.type === 'call_ringing' && typeof p.callId === 'string') { update({ ...active, callId: p.callId, phase: 'Ringing...' }); return; }
     if (p.callId !== active.callId) return;
+    if (event.type === 'call_missed') { cleanup(); update(null); setError(active.incoming ? 'Bạn đã bỏ lỡ cuộc gọi.' : 'Không có phản hồi sau 50 giây. Cuộc gọi nhỡ.'); return; }
     if (event.type === 'call_accepted') { update({ ...active, incoming: false, phase: 'Connecting...' }); void (async () => { try { const pc = await startPeer(active.type); const offer = await pc.createOffer(); await pc.setLocalDescription(offer); realtimeClient.send({ type: 'webrtc_offer', payload: { callId: active.callId, description: offer } }); } catch (e) { setError(e instanceof Error ? e.message : 'Could not start the call.'); end(); } })(); }
     if (event.type === 'webrtc_offer' && p.description) void (async () => { try { const pc = peer.current ?? await startPeer(active.type); await pc.setRemoteDescription(p.description as RTCSessionDescriptionInit); for (const candidate of pending.current.splice(0)) await pc.addIceCandidate(candidate); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer); realtimeClient.send({ type: 'webrtc_answer', payload: { callId: active.callId, description: answer } }); update({ ...active, phase: 'Connecting...' }); } catch (e) { setError(e instanceof Error ? e.message : 'Call negotiation failed.'); end(); } })();
     if (event.type === 'webrtc_answer' && p.description) {

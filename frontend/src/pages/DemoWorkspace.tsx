@@ -276,7 +276,6 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
   }
 
   async function startCall(contact: Contact, type: "voice" | "video") {
-    if (!contact.online) return;
     try {
       await ChatApi.direct(contact.id);
       await call.start(contact.id, contact.name, type);
@@ -368,7 +367,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
                   </div>
                   <div className="contact-actions">
                     <button className="icon-button" onClick={async () => { try { await ChatApi.direct(c.id); onOpenChat(); } catch (cause) { showNotice(cause instanceof Error ? cause.message : "Không thể mở cuộc trò chuyện."); } }} title="Nhắn tin"><Icon name="message" size={17} /></button>
-                    <button className="icon-button" onClick={() => void startCall(c, "voice")} title="Gọi thoại" disabled={!c.online}><Icon name="call" size={17} /></button>
+                    <button className="icon-button" onClick={() => void startCall(c, "voice")} title="Gọi thoại"><Icon name="call" size={17} /></button>
                   </div>
                 </div>
               ))}
@@ -398,7 +397,7 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
                   </div>
                   <div className="contact-card-actions">
                     <button onClick={async () => { try { await ChatApi.direct(c.id); onOpenChat(); } catch (cause) { showNotice(cause instanceof Error ? cause.message : "Không thể mở cuộc trò chuyện."); } }}><Icon name="message" size={15} />Nhắn tin</button>
-                    <button disabled={!c.online} onClick={() => void startCall(c, "voice")}><Icon name="call" size={15} />Gọi</button>
+                    <button onClick={() => void startCall(c, "voice")}><Icon name="call" size={15} />Gọi</button>
                   </div>
                 </div>
               ))}
@@ -551,14 +550,14 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
           <div className="full-main calls-main">
             <div className="calls-stats-row">
               <div className="calls-stat"><span className="calls-stat-value">—</span><span>Chưa có API lịch sử cuộc gọi</span></div>
-              <div className="calls-stat"><span className="calls-stat-value">{contacts.filter(c => c.online).length}</span><span>Thành viên có thể gọi</span></div>
+              <div className="calls-stat"><span className="calls-stat-value">{contacts.length}</span><span>Thành viên trong danh bạ</span></div>
               <div className="calls-stat missed"><span className="calls-stat-value">—</span><span>Chưa có API cuộc gọi nhỡ</span></div>
             </div>
 
             <div className="calls-new-section">
               <h3>Bắt đầu cuộc gọi mới</h3>
               <div className="call-contacts-list">
-                {contacts.filter(c => c.online).map((c) => (
+                {contacts.map((c) => (
                   <div key={c.id} className="call-contact-row">
                     <span className={`avatar avatar-${c.color}`}>{c.initials}<span className={c.online ? "presence-dot" : "presence-dot offline"} /></span>
                     <div>
@@ -566,10 +565,10 @@ export default function DemoWorkspace({ user, call, initialTab = "calls", onOpen
                       <span>{c.role}</span>
                     </div>
                     <div className="call-contact-actions">
-                      <button className={`call-action-btn ${!c.online ? "disabled" : ""}`} onClick={() => void startCall(c, "voice")} title="Gọi thoại">
+                      <button className="call-action-btn" onClick={() => void startCall(c, "voice")} title="Gọi thoại">
                         <Icon name="call" size={16} />
                       </button>
-                      <button className={`call-action-btn video ${!c.online ? "disabled" : ""}`} onClick={() => void startCall(c, "video")} title="Gọi video">
+                      <button className="call-action-btn video" onClick={() => void startCall(c, "video")} title="Gọi video">
                         <Icon name="camera" size={16} />
                       </button>
                     </div>

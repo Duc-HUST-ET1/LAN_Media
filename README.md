@@ -4,6 +4,8 @@ Phase 6 setup, API and manual acceptance instructions: [docs/phase6.md](docs/pha
 
 LAN-Media là ứng dụng nhắn tin đa phương tiện ưu tiên mạng LAN. Dự án hiện có đăng ký/đăng nhập, chat thời gian thực qua WebSocket, trạng thái online, hội thoại cá nhân/nhóm và gửi tệp. Ứng dụng gồm backend và frontend trong cùng một repository; cơ sở dữ liệu MySQL lưu tài khoản, phiên đăng nhập, hội thoại và tin nhắn. Tệp tải lên được lưu trên ổ đĩa của máy chủ.
 
+Cuộc gọi thoại và video có thể bắt đầu ngay cả khi người nhận đang ngoại tuyến. Cuộc gọi sẽ đổ chuông trong 50 giây; nếu không được trả lời, máy chủ tự kết thúc và thông báo cuộc gọi nhỡ cho các bên đang kết nối.
+
 > Hướng dẫn dưới đây dùng Windows PowerShell cho các lệnh sao chép tệp và tương thích với cấu hình Docker Compose hiện tại. Có thể phát triển trên macOS/Linux bằng các lệnh tương đương. Chọn **một** trong hai cách chạy: Docker Compose (khuyến nghị cho máy mới) hoặc Node.js + MySQL cài trực tiếp.
 
 ## Yêu cầu phần cứng

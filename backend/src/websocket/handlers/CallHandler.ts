@@ -17,9 +17,13 @@ export class CallHandler {
         const targetId = p.targetId; const type = p.callType;
         if (typeof targetId !== 'string' || (type !== 'voice' && type !== 'video')) throw new ApiError(400, 'targetId and callType are required.');
         if (!(await this.users.findById(targetId))) throw new ApiError(404, 'User not found.');
-        if (!this.connections.isOnline(targetId)) throw new ApiError(409, 'User is currently unavailable.');
-        const call = callService.start(userId, targetId, type);
         const caller = await this.users.findById(userId);
+        const call = callService.start(userId, targetId, type, (missedCall) => {
+          this.connections.sendToUsers([missedCall.callerId, missedCall.calleeId], {
+            type: 'call_missed',
+            payload: { callId: missedCall.callId },
+          });
+        });
         this.connections.sendToUser(targetId, { type: 'incoming_call', payload: { callId: call.callId, callerId: userId, callerName: caller?.displayName ?? 'Contact', callType: type } });
         this.connections.sendToUser(userId, { type: 'call_ringing', payload: { callId: call.callId, targetId } });
       } else {
@@ -38,6 +42,14 @@ export class CallHandler {
       }
     } catch (e) { this.error(socket, req, e instanceof ApiError ? `HTTP_${e.statusCode}` : 'SERVER_ERROR', e instanceof Error ? e.message : 'Call request failed.'); }
   }
-  endForUser(userId: string): void { const call = callService.finishForUser(userId); if (call) this.connections.sendToUser(call.callerId === userId ? call.calleeId : call.callerId, { type: 'call_ended', payload: { callId: call.callId } }); }
+  endForUser(userId: string): void {
+    const call = callService.finishForUser(userId);
+    if (!call) return;
+    if (call.status === 'ringing' && call.calleeId === userId) {
+      this.connections.sendToUser(call.callerId, { type: 'call_missed', payload: { callId: call.callId } });
+      return;
+    }
+    this.connections.sendToUser(call.callerId === userId ? call.calleeId : call.callerId, { type: 'call_ended', payload: { callId: call.callId } });
+  }
   private error(socket: WebSocket, requestId: string | undefined, code: string, message: string): void { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'call_error', requestId, error: { code, message } })); }
 }
