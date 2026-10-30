@@ -405,19 +405,29 @@
   height: 100%;
   object-fit: cover;
   background: linear-gradient(135deg, #0c1d2d, #10263d);
+border-radius: 12px;
+box-shadow: 0 8px 18px rgba(3, 10, 18, 0.6);
 }
 
 .call-local-video {
-  position: absolute;
-  right: 22px;
-  bottom: 20px;
-  width: min(180px, 20%);
-  height: min(150px, 20vh);
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 14px;
-  object-fit: cover;
-  background: #0e2133;
+position: absolute;
+right: 22px;
+bottom: 20px;
+width: min(180px, 20%);
+height: min(150px, 20vh);
+border: 2px solid rgba(0, 0, 0, 0.45);
+border-radius: 10px;
+object-fit: cover;
+background: linear-gradient(180deg, #0b2a2a, #07333a);
+backdrop-filter: blur(6px) saturate(120%);
 }
+
+/* Tweak: make local (preview) video slightly smaller and offset so it doesn't visually overlap the main frame edge */
+.call-local-video {
+transform: translateZ(0) translateY(-6px);
+}
+
+/* End visual tweaks */
 
 .call-toolbar {
   display: flex;

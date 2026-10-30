@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CallController } from '../../hooks/useCall';
 import type { AuthUser } from '../../api/AuthApi';
 
@@ -36,10 +36,42 @@ export default function CallDialog({ call, contacts }: { call: CallController; c
   const localVideo = useRef<HTMLVideoElement>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const remoteAudio = useRef<HTMLAudioElement>(null);
+  const [remoteAudioMuted, setRemoteAudioMuted] = useState(false);
+  const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
 
   useEffect(() => { if (call.local && localVideo.current) localVideo.current.srcObject = call.local; }, [call.local]);
   useEffect(() => { if (call.remote && remoteVideo.current) remoteVideo.current.srcObject = call.remote; }, [call.remote]);
-  useEffect(() => { if (call.remote && remoteAudio.current) remoteAudio.current.srcObject = call.remote; }, [call.remote]);
+  useEffect(() => {
+    if (!call.remote || !remoteAudio.current) return;
+    const audio = remoteAudio.current;
+    audio.srcObject = call.remote;
+    audio.muted = remoteAudioMuted;
+    void audio.play()
+      .then(() => setAudioPlaybackBlocked(false))
+      .catch(() => setAudioPlaybackBlocked(true));
+  }, [call.remote, remoteAudioMuted]);
+  useEffect(() => {
+    setRemoteAudioMuted(false);
+    setAudioPlaybackBlocked(false);
+  }, [call.call?.callId]);
+
+  async function toggleRemoteAudio() {
+    const audio = remoteAudio.current;
+    if (!audio) return;
+    if (remoteAudioMuted || audioPlaybackBlocked) {
+      audio.muted = false;
+      setRemoteAudioMuted(false);
+      try {
+        await audio.play();
+        setAudioPlaybackBlocked(false);
+      } catch {
+        setAudioPlaybackBlocked(true);
+      }
+      return;
+    }
+    audio.muted = true;
+    setRemoteAudioMuted(true);
+  }
 
   if (!call.call) return call.error ? <div className="call-toast" role="alert"><span>{call.error}</span><button type="button" onClick={call.dismissError} aria-label="Đóng thông báo">×</button></div> : null;
 
@@ -66,12 +98,13 @@ export default function CallDialog({ call, contacts }: { call: CallController; c
             {icons.close}
           </button>
         </header>
+        <audio ref={remoteAudio} autoPlay playsInline aria-label="Âm thanh cuộc gọi" />
 
         <div className="call-main">
           <div className="call-center-panel">
             {active.type === 'video' && !isIncoming ? (
               <div className="call-video-stage">
-                <video ref={remoteVideo} autoPlay playsInline muted={false} />
+                <video ref={remoteVideo} autoPlay playsInline muted />
                 <video ref={localVideo} autoPlay muted playsInline className="call-local-video" />
               </div>
             ) : (
@@ -111,19 +144,19 @@ export default function CallDialog({ call, contacts }: { call: CallController; c
             <span>{call.muted ? 'Bật mic' : 'Mic'}</span>
           </button>
 
-          <button type="button" className={`call-tool ${call.cameraOff ? 'is-muted' : ''}`} onClick={call.toggleCamera} aria-label={call.cameraOff ? 'Bật camera' : 'Tắt camera'}>
+          {active.type === 'video' && <button type="button" className={`call-tool ${call.cameraOff ? 'is-muted' : ''}`} onClick={call.toggleCamera} aria-label={call.cameraOff ? 'Bật camera' : 'Tắt camera'}>
             {icons.camera}
             <span>{call.cameraOff ? 'Bật camera' : 'Camera'}</span>
-          </button>
+          </button>}
 
           <button type="button" className="call-tool">
             {icons.chat}
             <span>Chia sẻ</span>
           </button>
 
-          <button type="button" className="call-tool">
+          <button type="button" className={`call-tool ${remoteAudioMuted || audioPlaybackBlocked ? 'is-muted' : ''}`} onClick={() => void toggleRemoteAudio()} disabled={!call.remote} aria-label={remoteAudioMuted || audioPlaybackBlocked ? 'Bật âm thanh' : 'Tắt âm thanh'}>
             {icons.sound}
-            <span>Âm thanh</span>
+            <span>{remoteAudioMuted || audioPlaybackBlocked ? 'Bật âm thanh' : 'Tắt âm thanh'}</span>
           </button>
 
           <button type="button" className="call-tool call-tool-danger" onClick={() => call.end()} aria-label="Kết thúc cuộc gọi">

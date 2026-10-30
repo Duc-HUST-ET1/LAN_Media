@@ -12,6 +12,7 @@ import './styles/reset.css';
 import './styles/variables.css';
 import './styles/global.css';
 import './styles/demo.css';
+import './styles/call-theme.css';
 
 const routes = {
   '/': 'Home', '/chat': 'Chat', '/calls': 'Calls', '/files': 'Files', '/settings': 'Settings',

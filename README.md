@@ -1,113 +1,113 @@
 # LAN-Media
 
-Phase 6 setup, API and manual acceptance instructions: [docs/phase6.md](docs/phase6.md).
+Phase 6 setup, API, and manual acceptance instructions: [docs/phase6.md](docs/phase6.md).
 
-LAN-Media là ứng dụng nhắn tin đa phương tiện ưu tiên mạng LAN. Dự án hiện có đăng ký/đăng nhập, chat thời gian thực qua WebSocket, trạng thái online, hội thoại cá nhân/nhóm và gửi tệp. Ứng dụng gồm backend và frontend trong cùng một repository; cơ sở dữ liệu MySQL lưu tài khoản, phiên đăng nhập, hội thoại và tin nhắn. Tệp tải lên được lưu trên ổ đĩa của máy chủ.
+LAN-Media is a LAN-priority multimedia messaging application. The project currently includes registration/login, real-time chat over WebSocket, online status, one-to-one and group conversations, and file transfer. The application includes both backend and frontend in the same repository; MySQL stores accounts, login sessions, conversations, and messages. Uploaded files are stored on the server's local disk.
 
-Cuộc gọi thoại và video có thể bắt đầu ngay cả khi người nhận đang ngoại tuyến. Cuộc gọi sẽ đổ chuông trong 50 giây; nếu không được trả lời, máy chủ tự kết thúc và thông báo cuộc gọi nhỡ cho các bên đang kết nối.
+Voice and video calls can start even when the recipient is offline. An incoming call rings for 50 seconds; if unanswered, the server ends it automatically and notifies the connected parties that the call was missed.
 
-> Hướng dẫn dưới đây dùng Windows PowerShell cho các lệnh sao chép tệp và tương thích với cấu hình Docker Compose hiện tại. Có thể phát triển trên macOS/Linux bằng các lệnh tương đương. Chọn **một** trong hai cách chạy: Docker Compose (khuyến nghị cho máy mới) hoặc Node.js + MySQL cài trực tiếp.
+> The instructions below use Windows PowerShell for file-copy commands and remain compatible with the current Docker Compose setup. Development can also be done on macOS/Linux with equivalent commands. Choose one of the two ways to run the app: Docker Compose (recommended for new machines) or Node.js + MySQL installed directly.
 
-## Yêu cầu phần cứng
+## Hardware requirements
 
-Các mức dưới đây là cấu hình khuyến nghị để chạy thử và phát triển ở quy mô nhỏ, không phải kết quả kiểm thử tải:
+The levels below are recommended configurations for small-scale testing and development, not benchmark results:
 
-| Thành phần | Tối thiểu khuyến nghị | Thoải mái hơn |
+| Component | Minimum recommended | More comfortable |
 |---|---:|---:|
-| CPU | 2 nhân 64-bit | 4 nhân trở lên |
-| RAM, chạy trực tiếp | 4 GB | 8 GB trở lên |
-| RAM, dùng Docker Desktop | 8 GB khả dụng cho máy và Docker | 16 GB trở lên |
-| Ổ đĩa | 5 GB trống để clone, cài dependencies và khởi chạy database | SSD, còn trống thêm theo dung lượng dữ liệu/tệp |
-| Mạng | LAN/Wi-Fi ổn định nếu truy cập từ thiết bị khác | Ethernet hoặc Wi-Fi cùng mạng nội bộ |
+| CPU | 2-core 64-bit | 4 cores or more |
+| RAM, local runtime | 4 GB | 8 GB or more |
+| RAM, Docker Desktop | 8 GB available for the machine and Docker | 16 GB or more |
+| Disk | 5 GB free for cloning, installing dependencies, and running the database | SSD with extra free space for growing data/files |
+| Network | Stable LAN/Wi‑Fi if accessed from other devices | Ethernet or Wi‑Fi on the same private network |
 
-Dung lượng tệp tải lên và database tăng theo mức sử dụng; không có giới hạn tổng dung lượng ổ đĩa do ứng dụng tự quản lý. Mỗi tệp tải lên mặc định tối đa 100 MiB (`MAX_FILE_SIZE`).
+Upload sizes and database growth scale with usage; there is no hard total disk limit managed by the app. Each uploaded file defaults to a maximum of 100 MiB (`MAX_FILE_SIZE`).
 
-## Công nghệ sử dụng
+## Technologies used
 
-- **Backend:** Node.js 22 trở lên, TypeScript, Express 5, WebSocket (`ws`), MySQL 8+ và `mysql2`.
+- **Backend:** Node.js 22+, TypeScript, Express 5, WebSocket (`ws`), MySQL 8+, and `mysql2`.
 - **Frontend:** React 19, TypeScript, Vite 6.
-- **Công cụ phát triển:** npm, TypeScript, `concurrently`; kiểm thử bằng Node.js test runner.
-- **Đóng gói môi trường:** Docker Compose (tùy chọn), với Node.js 22 và MySQL 8.4.
-- **Lưu trữ:** MySQL cho dữ liệu ứng dụng; thư mục `uploads/` trên máy chủ cho nội dung tệp.
+- **Development tools:** npm, TypeScript, `concurrently`; tests use the Node.js test runner.
+- **Environment packaging:** Docker Compose (optional), with Node.js 22 and MySQL 8.4.
+- **Storage:** MySQL for application data; the `uploads/` directory on the server for file content.
 
-## Cổng mạng mặc định
+## Default network ports
 
-| Cổng | Dịch vụ | Ghi chú |
+| Port | Service | Notes |
 |---:|---|---|
-| 3000 | Backend API và WebSocket | `PORT` |
-| 5173 | Frontend Vite khi phát triển | `FRONTEND_PORT` |
-| 3307 | MySQL được publish bởi Docker Compose | `MYSQL_PUBLISHED_PORT`; bên trong Docker, ứng dụng kết nối MySQL ở cổng 3306 |
+| 3000 | Backend API and WebSocket | `PORT` |
+| 5173 | Frontend Vite during development | `FRONTEND_PORT` |
+| 3307 | MySQL published by Docker Compose | `MYSQL_PUBLISHED_PORT`; inside Docker, the app connects to MySQL on port 3306 |
 
-Các cổng 3000 và 5173 cần được cho phép trên firewall của máy chủ nếu truy cập từ thiết bị khác trong LAN. Chỉ mở cổng cần thiết trên mạng riêng đáng tin cậy; không đưa database ra Internet.
+Ports 3000 and 5173 must be allowed through the server firewall if access comes from other devices on the LAN. Only expose the minimum required ports on a trusted private network; do not expose the database to the internet.
 
-## Cách 1 — Clone và chạy bằng Docker Compose (khuyến nghị)
+## Method 1 — Clone and run with Docker Compose (recommended)
 
-### 1. Cài công cụ cần thiết
+### 1. Install required tools
 
-Cài **Git** và **Docker Desktop** (bật Docker Compose/WSL 2 nếu Docker Desktop yêu cầu). Khởi động Docker Desktop và đợi Docker báo sẵn sàng. Cách này không cần cài Node.js hoặc MySQL trực tiếp trên máy.
+Install **Git** and **Docker Desktop** (enable Docker Compose/WSL 2 if Docker Desktop requires it). Launch Docker Desktop and wait for Docker to report readiness. This method does not require installing Node.js or MySQL directly on the machine.
 
-### 2. Clone repository
+### 2. Clone the repository
 
-Mở PowerShell tại thư mục muốn lưu dự án:
+Open PowerShell in the folder where you want to store the project:
 
 ```powershell
 git clone https://github.com/Duc-HUST-ET1/LAN_Media.git
 cd LAN_Media
 ```
 
-Nếu repository được chuyển sang địa chỉ khác hoặc là private, thay URL bằng URL clone hiển thị trên GitHub và bảo đảm tài khoản có quyền truy cập.
+If the repository is moved to a different URL or is private, replace the clone URL with the GitHub URL shown in the repository and ensure your account has access.
 
-### 3. Tạo và sửa tệp môi trường
+### 3. Create and edit the environment file
 
-Tạo `.env` từ mẫu đã có trong repository:
+Create `.env` from the template already in the repository:
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-Thay các giá trị mật khẩu mẫu bằng mật khẩu riêng, tối thiểu sửa:
+Replace sample passwords with your own private values, at minimum:
 
 ```dotenv
-DB_PASSWORD=mat_khau_rieng_cho_ung_dung
-DB_ROOT_PASSWORD=mat_khau_rieng_cho_mysql_root
+DB_PASSWORD=your_private_app_password
+DB_ROOT_PASSWORD=your_private_mysql_root_password
 ```
 
-Không dùng các giá trị mẫu `change_me`/`change_root_me` cho môi trường dùng chung hoặc production. Không commit hoặc gửi tệp `.env`; tệp này đã được Git bỏ qua. Docker Compose tự tạo database/user dựa trên `DB_NAME`, `DB_USER`, `DB_PASSWORD`, và `DB_ROOT_PASSWORD` khi khởi tạo volume MySQL lần đầu. Nếu đã có volume MySQL được tạo trước đó, thay mật khẩu trong `.env` không tự đổi mật khẩu đã lưu trong database.
+Do not use the sample values `change_me` or `change_root_me` in shared or production environments. Do not commit or share the `.env` file; it is already ignored by Git. Docker Compose creates the database and user based on `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and `DB_ROOT_PASSWORD` when the MySQL volume is first initialized. If a MySQL volume already exists, changing `.env` does not automatically change the password already stored in the database.
 
-### 4. Khởi động ứng dụng
+### 4. Start the application
 
-Từ thư mục `LAN_Media` (nơi có `docker-compose.yml`), chạy:
+From the `LAN_Media` directory (where `docker-compose.yml` is located), run:
 
 ```powershell
 docker compose up --build
 ```
 
-Lần chạy đầu tiên Docker tải image, cài npm packages trong container, khởi động MySQL, sau đó chạy backend và frontend. Giữ cửa sổ này mở khi dùng ứng dụng. Backend tự chạy các migration database lúc khởi động; không cần chạy thủ công một file migration riêng.
+On the first run, Docker downloads the images, installs npm packages inside the container, starts MySQL, and then runs the backend and frontend. Leave this window open while using the app. The backend automatically runs the database migrations at startup; no separate migration file is required.
 
-Mở trình duyệt tại <http://localhost:5173>. Kiểm tra backend tại <http://localhost:3000/api/health>.
+Open the browser at <http://localhost:5173>. Check the backend at <http://localhost:3000/api/health>.
 
-Để dừng, nhấn `Ctrl+C`. Sau đó có thể dùng:
+To stop it, press `Ctrl+C`. You can then run:
 
 ```powershell
 docker compose down
 ```
 
-Lệnh trên dừng và gỡ các container nhưng giữ dữ liệu trong named volume. **Không** dùng `docker compose down -v` nếu muốn giữ database.
+This stops and removes the containers but keeps the data in the named volume. Do not use `docker compose down -v` if you want to keep the database.
 
-## Cách 2 — Chạy trực tiếp với Node.js và MySQL
+## Method 2 — Run directly with Node.js and MySQL
 
-Chọn cách này nếu máy đã có MySQL và muốn chạy ứng dụng từ terminal của máy chủ.
+Choose this if the machine already has MySQL and you want to run the app from the server terminal.
 
-### 1. Cài công cụ cần thiết
+### 1. Install required tools
 
-Cài:
+Install:
 
 1. Git.
-2. Node.js 22 trở lên (bản LTS phù hợp) — npm đi kèm Node.js.
-3. MySQL Server 8 trở lên và MySQL command-line client (`mysql`).
+2. Node.js 22 or later (preferably the LTS release) — npm comes with Node.js.
+3. MySQL Server 8 or later and the MySQL command-line client (`mysql`).
 
-Xác nhận công cụ đã có trong PowerShell:
+Verify the tools are available in PowerShell:
 
 ```powershell
 node --version
@@ -115,31 +115,31 @@ npm --version
 mysql --version
 ```
 
-### 2. Clone mã nguồn
+### 2. Clone the source code
 
 ```powershell
 git clone https://github.com/Duc-HUST-ET1/LAN_Media.git
 cd LAN_Media
 ```
 
-### 3. Tạo database và tài khoản ứng dụng
+### 3. Create the database and application account
 
-Khởi động dịch vụ MySQL, sau đó chạy script khởi tạo bằng tài khoản quản trị MySQL:
+Start the MySQL service, then run the initialization script with the MySQL admin account:
 
 ```powershell
 Get-Content docs/database/setup.sql | mysql -u root -p
 ```
 
-Nhập mật khẩu `root` khi được yêu cầu. Script mặc định tạo database `lan_media` và tài khoản `lan_media_user` với mật khẩu `change_me` chỉ dùng cho phát triển local. Nếu muốn dùng thông tin khác, sửa database/user/password trong `docs/database/setup.sql` **trước khi chạy**, rồi dùng đúng các giá trị đó trong `.env` ở bước tiếp theo. Không sử dụng mật khẩu mẫu trên máy chủ dùng chung.
+Enter the root password when prompted. The default script creates the `lan_media` database and the `lan_media_user` account with the password `change_me` for local development only. If you want different values, edit the database/user/password in `docs/database/setup.sql` before running it, then use the same values in `.env` in the next step. Do not use sample passwords on shared or production machines.
 
-### 4. Tạo và cấu hình `.env`
+### 4. Create and configure `.env`
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-Với database cài trên cùng máy, đặt các giá trị kết nối tương ứng; ví dụ nếu giữ nguyên `docs/database/setup.sql`:
+For a database running on the same machine, use matching connection values; for example, if you keep the default `docs/database/setup.sql`:
 
 ```dotenv
 DB_HOST=localhost
@@ -149,79 +149,79 @@ DB_USER=lan_media_user
 DB_PASSWORD=change_me
 ```
 
-`DB_PASSWORD` phải trùng với mật khẩu tài khoản MySQL được tạo ở bước 3. Nếu MySQL chạy trên một máy khác, đặt `DB_HOST` là địa chỉ máy đó, cho phép kết nối MySQL từ máy ứng dụng, và thiết lập quyền MySQL/firewall phù hợp; không mở MySQL cho toàn Internet. `DB_ROOT_PASSWORD` và `MYSQL_PUBLISHED_PORT` chỉ phục vụ Docker Compose, không cần thiết cho cách chạy trực tiếp.
+`DB_PASSWORD` must match the password of the MySQL account created in step 3. If MySQL is running on another machine, set `DB_HOST` to that machine's address, allow MySQL connections from the app machine, and configure MySQL permissions/firewall appropriately; do not expose MySQL to the entire internet. `DB_ROOT_PASSWORD` and `MYSQL_PUBLISHED_PORT` are for Docker Compose only and are not needed for direct local execution.
 
-Các biến thường cần biết:
+Common variables to know:
 
-| Biến | Mặc định trong `.env.example` | Ý nghĩa |
+| Variable | Default in `.env.example` | Meaning |
 |---   |---                            |---      |
-| `HOST`, `PORT` | `0.0.0.0`, `3000` | Địa chỉ bind và cổng backend |
-| `FRONTEND_PORT` | `5173` | Cổng Vite; proxy `/api` và `/ws` tới backend |
-| `FRONTEND_ORIGIN` | `http://localhost:5173` | Origin được backend cho phép; nếu đổi cổng/giao thức frontend, cập nhật cho khớp |
-| `DB_HOST`, `DB_PORT` | `localhost`, `3306` | Địa chỉ MySQL; trong Compose, backend tự dùng hostname `mysql` và cổng `3306` |
-| `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Giá trị mẫu | Database và tài khoản ứng dụng; phải khớp với MySQL |
-| `SESSION_TTL_HOURS` | `168` | Thời hạn phiên đăng nhập (giờ) |
-| `MAX_MESSAGE_LENGTH` | `4000` | Số ký tự tối đa của tin nhắn |
-| `UPLOAD_DIR` | `./uploads` | Thư mục lưu file tải lên; cần có quyền ghi |
-| `MAX_FILE_SIZE` | `104857600` | Kích thước tệp tối đa, tính bằng byte (100 MiB) |
-| `ALLOWED_FILE_TYPES` | `*` | Danh sách MIME type/đuôi tệp cách nhau bằng dấu phẩy; `*` cho phép mọi loại |
-| `VITE_ICE_SERVERS` | Google STUN mặc định | Cấu hình ICE trong frontend; cấu hình STUN không tự cung cấp TURN server |
-| `VITE_HTTPS_KEY_FILE`, `VITE_HTTPS_CERT_FILE` | Không đặt | Tùy chọn đường dẫn certificate/key để chạy Vite HTTPS trong LAN |
-| `DB_ROOT_PASSWORD`, `MYSQL_PUBLISHED_PORT` | Giá trị mẫu, `3307` | Mật khẩu root và cổng host của MySQL khi dùng Compose |
+| `HOST`, `PORT` | `0.0.0.0`, `3000` | Backend bind address and port |
+| `FRONTEND_PORT` | `5173` | Vite port; proxies `/api` and `/ws` to the backend |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` | Origin allowed by the backend; update if the frontend port/protocol changes |
+| `DB_HOST`, `DB_PORT` | `localhost`, `3306` | MySQL address; in Compose, the backend uses the `mysql` hostname and port `3306` |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD` | sample values | Database and application account; must match MySQL |
+| `SESSION_TTL_HOURS` | `168` | Login session lifetime in hours |
+| `MAX_MESSAGE_LENGTH` | `4000` | Maximum message length in characters |
+| `UPLOAD_DIR` | `./uploads` | Directory where uploaded files are stored; must be writable |
+| `MAX_FILE_SIZE` | `104857600` | Maximum file size in bytes (100 MiB) |
+| `ALLOWED_FILE_TYPES` | `*` | Comma-separated MIME types/file extensions; `*` allows all |
+| `VITE_ICE_SERVERS` | Google STUN default | ICE configuration in the frontend; STUN does not provide a TURN server |
+| `VITE_HTTPS_KEY_FILE`, `VITE_HTTPS_CERT_FILE` | unset | Optional certificate/key paths to run Vite over HTTPS on the LAN |
+| `DB_ROOT_PASSWORD`, `MYSQL_PUBLISHED_PORT` | sample values, `3307` | Root password and host port for MySQL when using Compose |
 
-### 5. Cài dependencies và chạy
+### 5. Install dependencies and run
 
-Trong thư mục gốc dự án:
+In the project root:
 
 ```powershell
 npm install
 npm run dev
 ```
 
-`npm run dev` khởi động cả backend và frontend. Backend build TypeScript, chạy server và theo dõi thay đổi; frontend chạy Vite. Backend thực hiện migration khi khởi động, vì vậy phải bảo đảm MySQL đã chạy và các biến database chính xác trước khi chạy ứng dụng.
+`npm run dev` starts both backend and frontend. The backend builds TypeScript, runs the server, and watches for changes; the frontend runs Vite. The backend runs migrations on startup, so ensure MySQL is running and the database variables are correct before launching the app.
 
-Mở <http://localhost:5173>. API health check: <http://localhost:3000/api/health>. Dừng ứng dụng bằng `Ctrl+C`.
+Open <http://localhost:5173>. API health check: <http://localhost:3000/api/health>. Stop the app with `Ctrl+C`.
 
-Nếu cần chạy riêng, mở hai cửa sổ PowerShell tại thư mục dự án:
+If you need to run them separately, open two PowerShell windows in the project directory:
 
 ```powershell
-# Cửa sổ 1: backend
+# Window 1: backend
 npm run dev:backend
 ```
 
 ```powershell
-# Cửa sổ 2: frontend
+# Window 2: frontend
 npm run dev:frontend
 ```
 
-## Truy cập từ thiết bị khác trong mạng LAN
+## Access from other devices on the LAN
 
-1. Kết nối máy chủ và thiết bị khách vào cùng mạng LAN/Wi-Fi.
-2. Trên máy chủ Windows, chạy `ipconfig` rồi tìm địa chỉ IPv4 của adapter đang dùng (ví dụ `192.168.1.20`).
-3. Cho phép Node.js/Docker và cổng frontend `5173` cùng backend `3000` qua Windows Firewall trên **Private network**.
-4. Truy cập frontend từ thiết bị khách bằng `http://<IP-may-chu>:5173`, ví dụ `http://192.168.1.20:5173`.
+1. Connect the server and client devices to the same LAN/Wi‑Fi network.
+2. On the Windows server, run `ipconfig` and find the IPv4 address of the active adapter (for example `192.168.1.20`).
+3. Allow Node.js/Docker and ports `5173` (frontend) and `3000` (backend) through the Windows Firewall on the **Private network** profile.
+4. Access the frontend from another device via `http://<server-ip>:5173`, for example `http://192.168.1.20:5173`.
 
-Đăng nhập, API và WebSocket của ứng dụng được frontend proxy tới backend. Nếu cần quyền truy cập camera/microphone hoặc các API trình duyệt chỉ hoạt động trong secure context, `http://<IP-LAN>` thường không đủ. Khi đó có thể cấu hình HTTPS cho Vite bằng certificate tin cậy trên từng thiết bị. Ví dụ trên máy chủ Windows đã cài [mkcert](https://github.com/FiloSottile/mkcert):
+The app's login, API, and WebSocket traffic are proxied to the backend by the frontend. If the browser needs camera/microphone access or other browser APIs that require a secure context, `http://<LAN-IP>` may not be enough. In that case, configure HTTPS for Vite with a trusted certificate on each device. Example on a Windows server with [mkcert](https://github.com/FiloSottile/mkcert) installed:
 
 ```powershell
 mkcert -install
 New-Item -ItemType Directory -Force certs
-mkcert -key-file certs/lan-media-key.pem -cert-file certs/lan-media-cert.pem localhost 127.0.0.1 <IP-may-chu>
+mkcert -key-file certs/lan-media-key.pem -cert-file certs/lan-media-cert.pem localhost 127.0.0.1 <server-ip>
 ```
 
-Thay `<IP-may-chu>` bằng địa chỉ IPv4 của máy chủ, rồi đặt trong `.env`:
+Replace `<server-ip>` with the server's IPv4 address, then add the following to `.env`:
 
 ```dotenv
 VITE_HTTPS_KEY_FILE=certs/lan-media-key.pem
 VITE_HTTPS_CERT_FILE=certs/lan-media-cert.pem
-FRONTEND_ORIGIN=https://<IP-may-chu>:5173
+FRONTEND_ORIGIN=https://<server-ip>:5173
 ```
 
-Khởi động lại ứng dụng và mở `https://<IP-may-chu>:5173`. Thiết bị khách phải tin cậy CA certificate do `mkcert -CAROOT` cung cấp; `mkcert -install` trên máy chủ **không** tự cài CA lên điện thoại/máy khác. Chỉ cài CA certificate công khai lên thiết bị cần dùng; giữ riêng CA private key và private key của server, không commit hoặc gửi các khóa này. Tệp certificate/key trong `certs/` được Git bỏ qua. Tính năng gọi WebRTC phụ thuộc hỗ trợ trình duyệt, secure context và cấu hình mạng/ICE; cấu hình STUN mặc định không bảo đảm gọi được qua mọi router/firewall.
+Restart the app and open `https://<server-ip>:5173`. Client devices must trust the CA certificate produced by `mkcert -CAROOT`; running `mkcert -install` on the server does not automatically install the CA on phones or other machines. Only install a public CA certificate on devices that need access; keep the private CA key and server key secure and do not commit them. The certificate and key files under `certs/` are already ignored by Git. WebRTC features depend on browser support, secure context, and network/ICE configuration; the default STUN config does not guarantee calls across all routers/firewalls.
 
-## Kiểm tra dự án
+## Project checks
 
-Chạy tại thư mục gốc:
+Run from the project root:
 
 ```powershell
 npm run typecheck
@@ -229,15 +229,15 @@ npm run build
 npm test
 ```
 
-`npm test` build backend trước khi chạy unit/integration tests. Một số integration test cần MySQL với cấu hình trong `.env`; đảm bảo database khả dụng nếu cần xác nhận các luồng phụ thuộc database.
+`npm test` builds the backend before running unit and integration tests. Some integration tests require MySQL with the configuration in `.env`; ensure the database is available if you want to validate database-dependent flows.
 
-## Cấu trúc và tài liệu liên quan
+## Structure and related documentation
 
-- `backend/src/` — API, dịch vụ, repository, migration và WebSocket server.
-- `frontend/src/` — giao diện React, API client và realtime client.
-- `backend/src/core/database/migrations/` — migration được backend chạy tự động khi khởi động.
-- `docs/database/README.md` và `docs/database/setup.sql` — hướng dẫn và script tạo database/tài khoản MySQL.
-- `uploads/` — file upload được lưu cục bộ; cần sao lưu riêng nếu cần bảo toàn file người dùng.
-- `docker-compose.yml` — cấu hình chạy ứng dụng cùng MySQL bằng Docker Compose.
+- `backend/src/` — API, services, repositories, migrations, and WebSocket server.
+- `frontend/src/` — React UI, API client, and realtime client.
+- `backend/src/core/database/migrations/` — migrations automatically run by the backend on startup.
+- `docs/database/README.md` and `docs/database/setup.sql` — database setup guide and MySQL user creation script.
+- `uploads/` — local upload storage; back it up separately if user files need preservation.
+- `docker-compose.yml` — configuration for running the app and MySQL together via Docker Compose.
 
-Các luồng WebRTC/LAN discovery nâng cao và ứng dụng mobile chưa được bảo đảm đầy đủ chỉ bằng việc chạy các bước trên; xem trạng thái triển khai trong source hiện tại trước khi dùng như tính năng production.
+Advanced WebRTC/LAN discovery flows and mobile app support are not fully guaranteed just by following the steps above; check the current implementation state in the source before using them as production features.
